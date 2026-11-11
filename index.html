@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Comandos</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-base: #0f1115; --bg-panel: #161920; --bg-card: #20242d;
+            --primary: #6366f1; --primary-hover: #4f46e5;
+            --success: #10b981; --danger: #ef4444;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --border: #334155; --code-bg: #0b0f19;
+            --transition: all 0.2s ease;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            display: flex; height: 100vh; font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-base); color: var(--text-main); overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+        .sidebar {
+            width: 260px; background-color: var(--bg-panel); border-right: 1px solid var(--border);
+            padding: 24px 16px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .sidebar h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 16px; padding-left: 12px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
+        .category-btn { background: transparent; color: var(--text-muted); border: none; padding: 10px 12px; text-align: left; cursor: pointer; border-radius: 8px; font-size: 14px; font-weight: 500; transition: var(--transition); display: flex; align-items: center; gap: 12px; }
+        .category-btn i { font-size: 20px; width: 24px; text-align: center; }
+        .category-btn:hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-main); }
+        .category-btn.active { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 28px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+
+        .search-bar { display: flex; align-items: center; background-color: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 0 16px; width: 300px; transition: var(--transition); }
+        .search-bar:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+        .search-bar i { color: var(--text-muted); font-size: 18px; }
+        .search-bar input { border: none; background: transparent; padding: 12px; color: white; width: 100%; outline: none; }
+
+        .add-form { background-color: var(--bg-panel); border: 1px solid var(--border); padding: 24px; border-radius: 12px; display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+        .input-group.full { grid-column: span 2; display: flex; gap: 12px; }
+        input, select { background-color: var(--bg-base); border: 1px solid var(--border); color: var(--text-main); padding: 12px 16px; border-radius: 8px; font-size: 14px; width: 100%; outline: none; transition: var(--transition); }
+        input:focus, select:focus { border-color: var(--primary); }
+        
+        .btn { border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-danger { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); }
+        .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); }
+
+        .command-card { background-color: var(--bg-panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .command-card h3 { font-size: 16px; display: flex; align-items: center; gap: 8px; }
+
+        .info-wrapper { position: relative; display: inline-flex; align-items: center; cursor: help; }
+        .info-wrapper i { color: var(--primary); font-size: 18px; transition: var(--transition); }
+        .info-wrapper:hover i { color: var(--primary-hover); transform: scale(1.1); }
+        
+        .tooltip-text {
+            visibility: hidden; width: max-content; max-width: 250px; background-color: #334155;
+            color: #fff; text-align: center; border-radius: 6px; padding: 8px 12px;
+            position: absolute; z-index: 10; bottom: 130%; left: 50%; transform: translateX(-50%);
+            opacity: 0; transition: opacity 0.2s; font-size: 12px; font-weight: normal; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            line-height: 1.4;
+        }
+        .tooltip-text::after {
+            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+            border-width: 5px; border-style: solid; border-color: #334155 transparent transparent transparent;
+        }
+        .info-wrapper:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+        .tag { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; text-transform: uppercase; margin-left: 8px; }
+        .tag-python { background-color: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .tag-javascript { background-color: rgba(250, 204, 21, 0.15); color: #facc15; }
+        .tag-git { background-color: rgba(249, 115, 22, 0.15); color: #f97316; }
+        .tag-linux { background-color: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .tag-docker { background-color: rgba(14, 165, 233, 0.15); color: #0ea5e9; }
+        .tag-default { background-color: rgba(255,255,255,0.1); color: var(--text-muted); }
+
+        .card-actions { display: flex; gap: 8px; }
+        .btn-icon { background-color: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: var(--transition); }
+        .btn-icon:hover { background-color: rgba(255,255,255,0.1); }
+        .btn-icon.copied { background-color: rgba(16, 185, 129, 0.2); color: var(--success); border-color: var(--success); }
+        .code-block { background-color: var(--code-bg); padding: 16px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; overflow-x: auto; color: #10b981; border: 1px solid rgba(255,255,255,0.05); }
+
+        #toast { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background-color: var(--success); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); opacity: 0; z-index: 1000; }
+        #toast.show { bottom: 30px; opacity: 1; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1 id="page-title"><i class="ph ph-code"></i> Todos os Comandos</h1>
+            <div class="search-bar">
+                <i class="ph ph-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Buscar comandos..." onkeyup="renderizarComandos()">
+            </div>
+        </div>
+
+        <div class="add-form" id="formArea">
+            <div class="input-group">
+                <input type="text" id="cmdTitle" placeholder="Título (ex: Forçar push)">
+            </div>
+            <div class="input-group">
+                <select id="cmdCategory">
+                    <option value="Git">Git</option>
+                    <option value="Python">Python</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Linux">Linux</option>
+                    <option value="Docker">Docker</option>
+                </select>
+            </div>
+            <div class="input-group full">
+                <input type="text" id="cmdDesc" placeholder="Descrição: Para que serve este código? (opcional)">
+            </div>
+            <div class="input-group full">
+                <input type="text" id="cmdCode" placeholder="Comando (ex: git push -f)">
+                <button class="btn btn-primary" id="btnSalvar" onclick="salvarComando()">
+                    <i class="ph ph-plus-circle" style="font-size: 18px;"></i> Salvar
+                </button>
+                <button class="btn btn-danger" id="btnCancelar" onclick="cancelarEdicao()" style="display: none;">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+
+        <div id="commands-container" style="display: flex; flex-direction: column; gap: 16px;"></div>
+    </main>
+
+    <div id="toast"><i class="ph-fill ph-check-circle"></i> Notificação</div>
+
+    <script>
+        let comandosSalvos = [];
+        const categorias = [
+            { nome: 'Todas', icone: 'ph-squares-four' },
+            { nome: 'Git', icone: 'ph-git-branch' },
+            { nome: 'Python', icone: 'ph-file-code' },
+            { nome: 'JavaScript', icone: 'ph-file-js' },
+            { nome: 'Linux', icone: 'ph-terminal' },
+            { nome: 'Docker', icone: 'ph-cube' }
+        ];
+        
+        let categoriaAtual = 'Todas';
+        let idEditando = null;
+
+        async function carregarComandos() {
+            try {
+                const response = await fetch('/comandos');
+                comandosSalvos = await response.json();
+                renderizarSidebar();
+                renderizarComandos();
+            } catch (error) {
+                console.error(error);
+                mostrarToast("Erro ao conectar ao banco de dados.", true);
+            }
+        }
+
+        function renderizarSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.innerHTML = '<h2><i class="ph ph-books"></i> Categorias</h2>'; 
+            categorias.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `category-btn ${cat.nome === categoriaAtual ? 'active' : ''}`;
+                btn.innerHTML = `<i class="ph ${cat.icone}"></i> ${cat.nome}`;
+                btn.onclick = () => mudarCategoria(cat.nome);
+                sidebar.appendChild(btn);
+            });
+        }
+
+        function mudarCategoria(catNome) {
+            categoriaAtual = catNome;
+            const catInfo = categorias.find(c => c.nome === catNome);
+            document.getElementById('page-title').innerHTML = catNome === 'Todas' ? `<i class="ph ph-code"></i> Todos os Comandos` : `<i class="ph ${catInfo.icone}"></i> ${catNome}`;
+            document.getElementById('searchInput').value = '';
+            renderizarSidebar();
+            renderizarComandos();
+        }
+
+        function renderizarComandos() {
+            const container = document.getElementById('commands-container');
+            const termoBusca = document.getElementById('searchInput').value.toLowerCase();
+            container.innerHTML = '';
+
+            let comandosFiltrados = categoriaAtual === 'Todas' ? comandosSalvos : comandosSalvos.filter(c => c.categoria === categoriaAtual);
+            
+            if (termoBusca) {
+                comandosFiltrados = comandosFiltrados.filter(c => 
+                    c.titulo.toLowerCase().includes(termoBusca) || 
+                    c.codigo.toLowerCase().includes(termoBusca) ||
+                    (c.descricao && c.descricao.toLowerCase().includes(termoBusca))
+                );
+            }
+
+            if (comandosFiltrados.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);"><i class="ph ph-ghost" style="font-size: 48px; opacity: 0.5;"></i><p>Nenhum comando encontrado.</p></div>`;
+                return;
+            }
+
+            comandosFiltrados.forEach((cmd) => {
+                const card = document.createElement('div');
+                card.className = 'command-card';
+                const catLower = cmd.categoria ? cmd.categoria.toLowerCase() : 'default';
+                const tagClass = `tag-${catLower}`;
+                const escapedCode = cmd.codigo.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
+                const iconeInfo = cmd.descricao ? `
+                    <div class="info-wrapper">
+                        <i class="ph-fill ph-info"></i>
+                        <span class="tooltip-text">${cmd.descricao}</span>
+                    </div>
+                ` : '';
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <h3>
+                            ${cmd.titulo} 
+                            ${iconeInfo}
+                            <span class="tag ${tagClass}">${cmd.categoria}</span>
+                        </h3>
+                        <div class="card-actions">
+                            <button id="copy-${cmd.id}" class="btn-icon" title="Copiar" onclick="copiarTexto('${escapedCode}', 'copy-${cmd.id}')">
+                                <i class="ph ph-copy"></i> Copiar
+                            </button>
+                            <button class="btn-icon edit" title="Editar" onclick="prepararEdicao(${cmd.id})"><i class="ph ph-pencil-simple"></i></button>
+                            <button class="btn-icon delete" title="Excluir" onclick="deletarComando(${cmd.id})"><i class="ph ph-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="code-block">${cmd.codigo}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function salvarComando() {
+            const titulo = document.getElementById('cmdTitle').value;
+            const categoria = document.getElementById('cmdCategory').value;
+            const descricao = document.getElementById('cmdDesc').value;
+            const codigo = document.getElementById('cmdCode').value;
+
+            if (!titulo || !codigo) { mostrarToast("Preencha título e comando!", true); return; }
+
+            const payload = { titulo, categoria, descricao, codigo };
+
+            try {
+                if (idEditando !== null) {
+                    await fetch(`/comandos/${idEditando}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    mostrarToast("Comando atualizado!");
+                } else {
+                    await fetch('/comandos', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    mostrarToast("Comando salvo!");
+                }
+                
+                cancelarEdicao(); 
+                carregarComandos();
+            } catch (error) {
+                mostrarToast("Erro ao salvar comando.", true);
+            }
+        }
+
+        async function deletarComando(id) {
+            if(confirm("Tem certeza que deseja excluir?")) {
+                try {
+                    await fetch(`/comandos/${id}`, { method: 'DELETE' });
+                    mostrarToast("Excluído com sucesso.");
+                    if(idEditando === id) cancelarEdicao();
+                    carregarComandos();
+                } catch (error) {
+                    mostrarToast("Erro ao excluir.", true);
+                }
+            }
+        }
+
+        function prepararEdicao(id) {
+            const cmd = comandosSalvos.find(c => c.id === id);
+            if (cmd) {
+                document.getElementById('cmdTitle').value = cmd.titulo;
+                document.getElementById('cmdCategory').value = cmd.categoria;
+                document.getElementById('cmdDesc').value = cmd.descricao || '';
+                document.getElementById('cmdCode').value = cmd.codigo;
+                
+                idEditando = id;
+                document.getElementById('btnSalvar').innerHTML = '<i class="ph ph-floppy-disk" style="font-size: 18px;"></i> Atualizar';
+                document.getElementById('btnSalvar').style.backgroundColor = 'var(--success)';
+                document.getElementById('btnCancelar').style.display = 'block';
+                document.getElementById('formArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+        }
+
+        function cancelarEdicao() {
+            idEditando = null;
+            document.getElementById('cmdTitle').value = '';
+            document.getElementById('cmdDesc').value = '';
+            document.getElementById('cmdCode').value = '';
+            document.getElementById('btnSalvar').innerHTML = '<i class="ph ph-plus-circle" style="font-size: 18px;"></i> Salvar';
+            document.getElementById('btnSalvar').style.backgroundColor = 'var(--primary)';
+            document.getElementById('btnCancelar').style.display = 'none';
+        }
+
+        function copiarTexto(texto, btnId) {
+            navigator.clipboard.writeText(texto).then(() => {
+                const btn = document.getElementById(btnId);
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<i class="ph-fill ph-check-circle"></i> Copiado`;
+                btn.classList.add('copied');
+                mostrarToast("Copiado!");
+                setTimeout(() => { if(btn) { btn.innerHTML = originalHtml; btn.classList.remove('copied'); } }, 2000);
+            });
+        }
+
+        let toastTimeout;
+        function mostrarToast(mensagem, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.style.backgroundColor = isError ? 'var(--danger)' : 'var(--success)';
+            toast.innerHTML = isError ? `<i class="ph-fill ph-warning-circle"></i> ${mensagem}` : `<i class="ph-fill ph-check-circle"></i> ${mensagem}`;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        // Inicia carregando os dados do servidor
+        carregarComandos();
+    </script>
+</body>
+</html>
