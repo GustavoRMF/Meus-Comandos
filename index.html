@@ -154,7 +154,7 @@
             </div>
         </div>
 
-        <!-- NOVO: Configurações de Categorias -->
+        <!-- Configurações de Categorias & Importação -->
         <div class="form-section" id="configArea">
             <h2><i class="ph ph-gear"></i> Gerenciar Categorias</h2>
             <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Adicione ferramentas novas ou edite as existentes.</p>
@@ -167,6 +167,18 @@
             </div>
 
             <div id="config-cat-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+            <!-- NOVO: Importação em Massa -->
+            <hr style="border-color: var(--border); margin: 32px 0 24px 0;">
+            <h2><i class="ph ph-upload-simple"></i> Importar Comandos em Massa</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                Faça upload de um ficheiro <b>.json</b> para guardar múltiplos comandos de uma vez no banco de dados.
+            </p>
+            
+            <input type="file" id="importInput" accept=".json" style="display: none;" onchange="processarImportacao(event)">
+            <button class="btn btn-primary" onclick="document.getElementById('importInput').click()" style="background-color: #10b981;">
+                <i class="ph ph-file-arrow-up"></i> Selecionar Ficheiro JSON
+            </button>
         </div>
 
     </main>
@@ -208,7 +220,6 @@
             const menu = document.getElementById('sidebar-menu');
             menu.innerHTML = '';
             
-            // Botão "Todas" (Virtual)
             const btnTodas = document.createElement('button');
             btnTodas.className = `category-btn ${categoriaAtual === 'Todas' ? 'active' : ''}`;
             btnTodas.innerHTML = `<i class="ph ph-squares-four"></i> Todas`;
@@ -386,6 +397,57 @@
                 await carregarCategorias();
                 abrirConfiguracoes();
             }
+        }
+
+        // ================= IMPORTAÇÃO EM MASSA (JSON) =================
+        async function processarImportacao(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const comandosImportados = JSON.parse(e.target.result);
+                    
+                    if (!Array.isArray(comandosImportados)) {
+                        mostrarToast("Erro: O ficheiro JSON tem de ser uma lista (Array).", true);
+                        return;
+                    }
+
+                    mostrarToast(`A importar ${comandosImportados.length} comandos...`);
+                    
+                    let sucessoCount = 0;
+
+                    for (const cmd of comandosImportados) {
+                        try {
+                            await fetch('/comandos', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    titulo: cmd.titulo,
+                                    categoria: cmd.categoria,
+                                    descricao: cmd.descricao || '',
+                                    codigo: cmd.codigo
+                                })
+                            });
+                            sucessoCount++;
+                        } catch (err) {
+                            console.error(`Erro ao importar o comando: ${cmd.titulo}`, err);
+                        }
+                    }
+
+                    mostrarToast(`${sucessoCount} comandos importados com sucesso!`);
+                    
+                    document.getElementById('importInput').value = '';
+                    await carregarComandos();
+                    fecharTelas(true);
+                    
+                } catch (error) {
+                    mostrarToast("Erro ao ler o JSON. Verifique a formatação.", true);
+                }
+            };
+            
+            reader.readAsText(file);
         }
 
         // ================= CRUD COMANDOS =================
