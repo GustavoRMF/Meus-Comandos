@@ -2,13 +2,10 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meus Comandos</title>
     
-    <!-- Ícones -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    
-    <!-- NOVO: Highlight.js (Realce de Sintaxe Colorido - Tema Atom One Dark) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
@@ -22,13 +19,13 @@
             --transition: all 0.2s ease;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { display: flex; height: 100vh; font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-base); color: var(--text-main); overflow: hidden; }
+        body { display: flex; height: 100vh; font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg-base); color: var(--text-main); overflow: hidden; position: relative; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-base); }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
 
         /* Sidebar */
-        .sidebar { width: 240px; background-color: var(--bg-panel); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+        .sidebar { width: 240px; background-color: var(--bg-panel); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; transition: left 0.3s ease; }
         .sidebar h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 16px; padding-left: 12px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
         .sidebar-menu { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
         .category-btn { background: transparent; color: var(--text-muted); border: none; padding: 10px 12px; text-align: left; cursor: pointer; border-radius: 8px; font-size: 14px; font-weight: 500; transition: var(--transition); display: flex; align-items: center; gap: 12px; }
@@ -37,10 +34,14 @@
         .category-btn.active { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
         .config-btn-area { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
 
+        /* Overlay do Menu Mobile */
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; opacity: 0; transition: opacity 0.3s; }
+        .sidebar-overlay.show { display: block; opacity: 1; }
+
         /* Lista */
         .list-column { width: 320px; background-color: var(--bg-base); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
         .list-header { padding: 20px; border-bottom: 1px solid var(--border); background-color: var(--bg-panel); }
-        .btn-new { width: 100%; background-color: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 16px; transition: var(--transition); }
+        .btn-new { flex: 1; background-color: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: var(--transition); }
         .btn-new:hover { background-color: var(--primary-hover); }
         .search-bar { display: flex; align-items: center; background-color: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; transition: var(--transition); }
         .search-bar:focus-within { border-color: var(--primary); }
@@ -54,7 +55,7 @@
         .cmd-item p { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* Área Principal */
-        .detail-column { flex: 1; background-color: var(--bg-base); padding: 40px; display: flex; flex-direction: column; overflow-y: auto; }
+        .detail-column { flex: 1; background-color: var(--bg-base); padding: 40px; display: flex; flex-direction: column; overflow-y: auto; transition: left 0.3s ease; }
         .view-section, .form-section, .empty-state { display: none; }
         .show { display: block !important; }
         
@@ -69,11 +70,10 @@
         .btn-icon { background-color: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: var(--transition); }
         .btn-icon:hover { background-color: rgba(255,255,255,0.1); }
         
-        /* NOVO: Ajustes para o bloco de código com Highlight.js */
+        /* Sintaxe Colorida e Código */
         .code-box { background-color: var(--code-bg); padding: 20px; border-radius: 8px; font-size: 14px; overflow-x: auto; border: 1px solid rgba(255,255,255,0.05); position: relative; margin-bottom: 24px; line-height: 1.5; }
         pre { margin: 0; font-family: 'Courier New', monospace; }
-        pre code.hljs { background: transparent; padding: 0; } /* Remove o fundo nativo do hljs para usar o nosso */
-
+        pre code.hljs { background: transparent; padding: 0; } 
         .btn-copy { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.1); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--transition); }
         .btn-copy:hover { background: rgba(255,255,255,0.2); }
         .btn-copy.copied { background: var(--success); }
@@ -90,20 +90,43 @@
         .form-actions { display: flex; gap: 12px; margin-top: 24px; }
         .btn { border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary { background-color: var(--primary); color: white; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-danger { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); }
-        .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); }
-
+        
         .cat-list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
         .tag { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; text-transform: uppercase; display: inline-block; background-color: rgba(255,255,255,0.1); color: var(--text-main); }
         
         #toast { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background-color: var(--success); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); opacity: 0; z-index: 1000; display: flex; align-items: center; gap: 8px; }
         #toast.show { bottom: 30px; opacity: 1; }
+
+        /* Utilitário Mobile */
+        .mobile-only { display: none; }
+
+        /* ================= MEDIA QUERIES (MOBILE) ================= */
+        @media (max-width: 768px) {
+            .mobile-only { display: flex; }
+            
+            /* Sidebar vira Menu Lateral Flutuante */
+            .sidebar { position: fixed; left: -260px; top: 0; height: 100%; z-index: 999; box-shadow: 4px 0 15px rgba(0,0,0,0.5); }
+            .sidebar.open { left: 0; }
+            
+            /* Lista ocupa 100% da tela inicial */
+            .list-column { width: 100%; border-right: none; }
+            
+            /* Tela de Detalhes vira uma "Gaveta" que desliza por cima */
+            .detail-column { position: fixed; left: 100%; top: 0; width: 100%; height: 100%; z-index: 900; background-color: var(--bg-base); padding: 20px; }
+            .detail-column.active-mobile { left: 0; }
+
+            .detail-header { flex-direction: column; gap: 16px; }
+            .card-actions { width: 100%; justify-content: flex-start; }
+            .form-section { padding: 20px; border: none; }
+        }
     </style>
 </head>
 <body>
+    
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="fecharMenu()"></div>
+
     <!-- 1. Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <h2><i class="ph ph-books"></i> Categorias</h2>
         <div class="sidebar-menu" id="sidebar-menu"></div>
         <div class="config-btn-area">
@@ -114,7 +137,12 @@
     <!-- 2. Coluna da Lista -->
     <section class="list-column">
         <div class="list-header">
-            <button class="btn-new" onclick="mostrarFormulario()"><i class="ph-bold ph-plus"></i> Novo Comando</button>
+            <!-- NOVO: Botão Hambúrguer para Mobile -->
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                <button class="btn-icon mobile-only" onclick="abrirMenu()" style="padding: 12px;"><i class="ph ph-list" style="font-size: 20px;"></i></button>
+                <button class="btn-new" onclick="mostrarFormulario()" style="margin-bottom: 0;"><i class="ph-bold ph-plus"></i> Novo Comando</button>
+            </div>
+            
             <div class="search-bar">
                 <i class="ph ph-magnifying-glass"></i>
                 <input type="text" id="searchInput" placeholder="Buscar em..." onkeyup="renderizarLista()">
@@ -124,7 +152,7 @@
     </section>
 
     <!-- 3. Área Principal -->
-    <main class="detail-column">
+    <main class="detail-column" id="detailColumn">
         
         <div class="empty-state show" id="emptyState">
             <i class="ph ph-hand-pointing"></i>
@@ -133,6 +161,9 @@
         </div>
 
         <div class="view-section" id="viewArea">
+            <!-- NOVO: Botão Voltar para Mobile -->
+            <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar à Lista</button>
+            
             <div class="detail-header">
                 <div class="detail-title-area">
                     <span class="tag" id="det-tag">Categoria</span>
@@ -147,12 +178,12 @@
             
             <div class="code-box">
                 <button class="btn-copy" id="btnCopy" onclick="copiarCodigo()"><i class="ph ph-copy"></i> Copiar</button>
-                <!-- NOVO: Estrutura <pre><code> para o Highlight.js -->
                 <pre><code id="det-codigo"></code></pre>
             </div>
         </div>
 
         <div class="form-section" id="formArea">
+            <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar</button>
             <h2 id="form-titulo"><i class="ph ph-plus-circle"></i> Adicionar Comando</h2>
             <div class="input-group"><label>Título</label><input type="text" id="cmdTitle" placeholder="Ex: Forçar push no Git"></div>
             <div class="input-group"><label>Categoria</label><select id="cmdCategory"></select></div>
@@ -160,33 +191,33 @@
             <div class="input-group"><label>Código</label><textarea id="cmdCode" placeholder="Cole o seu código aqui..."></textarea></div>
             <div class="form-actions">
                 <button class="btn btn-primary" onclick="salvarComando()"><i class="ph ph-floppy-disk"></i> Salvar</button>
-                <button class="btn btn-danger" onclick="fecharTelas(true)">Cancelar</button>
+                <button class="btn" style="background:transparent; border: 1px solid var(--border); color:white;" onclick="voltarParaLista()">Cancelar</button>
             </div>
         </div>
 
-        <!-- Configurações & Importação -->
         <div class="form-section" id="configArea">
+            <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar</button>
             <h2><i class="ph ph-gear"></i> Gerenciar Categorias</h2>
             <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Adicione ferramentas novas ou edite as existentes.</p>
             
-            <div style="display: flex; gap: 10px; margin-bottom: 24px;">
-                <input type="text" id="catNameInput" placeholder="Nome (ex: React)" style="flex: 2;">
-                <input type="text" id="catIconInput" placeholder="Ícone (ex: ph-atom)" value="ph-folder" style="flex: 1;">
-                <button class="btn btn-primary" id="btnSalvarCat" onclick="salvarCategoria()"><i class="ph ph-plus-circle"></i> Adicionar</button>
-                <button class="btn btn-danger" id="btnCancelarCat" onclick="cancelarEdicaoCategoria()" style="display: none;"><i class="ph ph-x"></i></button>
+            <div style="display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;">
+                <input type="text" id="catNameInput" placeholder="Nome (ex: React)" style="flex: 2; min-width: 120px;">
+                <input type="text" id="catIconInput" placeholder="Ícone" value="ph-folder" style="flex: 1; min-width: 90px;">
+                <button class="btn btn-primary" id="btnSalvarCat" onclick="salvarCategoria()"><i class="ph ph-plus-circle"></i></button>
+                <button class="btn" id="btnCancelarCat" onclick="cancelarEdicaoCategoria()" style="display: none; background:transparent; border: 1px solid var(--danger); color:var(--danger);"><i class="ph ph-x"></i></button>
             </div>
 
             <div id="config-cat-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
 
             <hr style="border-color: var(--border); margin: 32px 0 24px 0;">
-            <h2><i class="ph ph-upload-simple"></i> Importar Comandos em Massa</h2>
+            <h2><i class="ph ph-upload-simple"></i> Importar em Massa</h2>
             <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-                Faça upload de um ficheiro <b>.json</b> para guardar múltiplos comandos de uma vez no banco de dados. Os comandos repetidos serão bloqueados pelo sistema.
+                Faça upload de um ficheiro <b>.json</b>.
             </p>
             
             <input type="file" id="importInput" accept=".json" style="display: none;" onchange="processarImportacao(event)">
             <button class="btn btn-primary" onclick="document.getElementById('importInput').click()" style="background-color: #10b981;">
-                <i class="ph ph-file-arrow-up"></i> Selecionar Ficheiro JSON
+                <i class="ph ph-file-arrow-up"></i> Selecionar JSON
             </button>
         </div>
 
@@ -205,6 +236,22 @@
         async function iniciarApp() {
             await carregarCategorias();
             await carregarComandos();
+        }
+
+        // ================= CONTROLES MOBILE =================
+        function abrirMenu() {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('show');
+        }
+
+        function fecharMenu() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('show');
+        }
+
+        function voltarParaLista() {
+            document.getElementById('detailColumn').classList.remove('active-mobile');
+            fecharTelas(true);
         }
 
         async function carregarCategorias() {
@@ -260,6 +307,7 @@
             document.getElementById('searchInput').placeholder = `Buscar em ${catNome}...`;
             document.getElementById('searchInput').value = '';
             fecharTelas(true);
+            fecharMenu(); // Fecha o menu no telemóvel ao escolher a categoria
             renderizarSidebar();
             renderizarLista();
         }
@@ -299,13 +347,16 @@
             document.getElementById('viewArea').classList.remove('show');
             document.getElementById('formArea').classList.remove('show');
             document.getElementById('configArea').classList.remove('show');
-            if(mostrarEmpty) document.getElementById('emptyState').classList.add('show');
+            if(mostrarEmpty) {
+                document.getElementById('emptyState').classList.add('show');
+            }
         }
 
         function mostrarDetalhes(id) {
             comandoSelecionadoId = id;
             fecharTelas();
             document.getElementById('viewArea').classList.add('show');
+            document.getElementById('detailColumn').classList.add('active-mobile'); // Abre gaveta no mobile
             renderizarLista();
 
             const cmd = comandosSalvos.find(c => c.id === id);
@@ -313,14 +364,13 @@
             document.getElementById('det-titulo').innerText = cmd.titulo;
             document.getElementById('det-desc').innerText = cmd.descricao || 'Sem descrição.';
             
-            // NOVO: Lógica do Highlight.js
             const codeBlock = document.getElementById('det-codigo');
-            codeBlock.textContent = cmd.codigo; // Insere o código puro
+            codeBlock.textContent = cmd.codigo;
+            codeBlock.className = ''; 
             
-            // Limpa as classes anteriores do Highlight.js
-            codeBlock.className = '';
+            // CORREÇÃO DO BUG DO HIGHLIGHT.JS (Limpa o cache)
+            delete codeBlock.dataset.highlighted;
             
-            // Mapeia a Categoria para a linguagem correta para o colorido ficar exato
             const catLower = (cmd.categoria || '').toLowerCase();
             let linguagem = 'plaintext';
             if (catLower.includes('python')) linguagem = 'language-python';
@@ -332,14 +382,13 @@
             else if (catLower.includes('json')) linguagem = 'language-json';
 
             codeBlock.classList.add(linguagem);
-            
-            // Manda a biblioteca colorir
-            hljs.highlightElement(codeBlock);
+            hljs.highlightElement(codeBlock); // Pinta novamente o código com as cores
         }
 
         function mostrarFormulario() {
             fecharTelas();
             document.getElementById('formArea').classList.add('show');
+            document.getElementById('detailColumn').classList.add('active-mobile'); // Abre gaveta no mobile
             modoEdicaoCmd = false;
             document.getElementById('form-titulo').innerHTML = `<i class="ph ph-plus-circle"></i> Adicionar Comando`;
             document.getElementById('cmdTitle').value = '';
@@ -363,10 +412,12 @@
         function abrirConfiguracoes() {
             fecharTelas();
             document.getElementById('configArea').classList.add('show');
+            document.getElementById('detailColumn').classList.add('active-mobile'); // Abre gaveta no mobile
+            fecharMenu();
             renderizarListaConfigCategorias();
         }
 
-        // ================= CRUD CATEGORIAS =================
+        // ================= CRUD CATEGORIAS E RESTO DO CÓDIGO PERMANECE IGUAL =================
         function renderizarListaConfigCategorias() {
             const container = document.getElementById('config-cat-list');
             container.innerHTML = '';
@@ -409,7 +460,7 @@
             idCategoriaEditando = id;
             document.getElementById('catNameInput').value = nome;
             document.getElementById('catIconInput').value = icone;
-            document.getElementById('btnSalvarCat').innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar';
+            document.getElementById('btnSalvarCat').innerHTML = '<i class="ph ph-floppy-disk"></i>';
             document.getElementById('btnCancelarCat').style.display = 'block';
         }
 
@@ -417,12 +468,12 @@
             idCategoriaEditando = null;
             document.getElementById('catNameInput').value = '';
             document.getElementById('catIconInput').value = 'ph-folder';
-            document.getElementById('btnSalvarCat').innerHTML = '<i class="ph ph-plus-circle"></i> Adicionar';
+            document.getElementById('btnSalvarCat').innerHTML = '<i class="ph ph-plus-circle"></i>';
             document.getElementById('btnCancelarCat').style.display = 'none';
         }
 
         async function deletarCategoria(id) {
-            if(confirm("Deseja apagar esta categoria? Os comandos vinculados podem ficar sem grupo.")) {
+            if(confirm("Deseja apagar esta categoria?")) {
                 await fetch(`/categorias/${id}`, { method: 'DELETE' });
                 mostrarToast("Categoria deletada!");
                 await carregarCategorias();
@@ -430,7 +481,6 @@
             }
         }
 
-        // ================= CRUD COMANDOS =================
         async function salvarComando() {
             const titulo = document.getElementById('cmdTitle').value;
             const categoria = document.getElementById('cmdCategory').value;
@@ -454,7 +504,6 @@
                     mostrarToast("Comando atualizado!");
                 } else {
                     const res = await fetch('/comandos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    
                     if (!res.ok) {
                         const errorData = await res.json();
                         mostrarToast(errorData.error || "Erro ao salvar.", true);
@@ -477,11 +526,10 @@
                 mostrarToast("Excluído!");
                 comandoSelecionadoId = null;
                 await carregarComandos();
-                fecharTelas(true);
+                voltarParaLista();
             }
         }
 
-        // ================= IMPORTAÇÃO JSON INTELIGENTE =================
         async function processarImportacao(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -490,11 +538,7 @@
             reader.onload = async function(e) {
                 try {
                     const comandosImportados = JSON.parse(e.target.result);
-                    
-                    if (!Array.isArray(comandosImportados)) {
-                        mostrarToast("Erro: O ficheiro JSON tem de ser uma lista (Array).", true);
-                        return;
-                    }
+                    if (!Array.isArray(comandosImportados)) { mostrarToast("Erro: Ficheiro JSON inválido.", true); return; }
 
                     mostrarToast(`A importar ${comandosImportados.length} comandos...`);
                     
@@ -506,42 +550,26 @@
                             const res = await fetch('/comandos', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    titulo: cmd.titulo,
-                                    categoria: cmd.categoria,
-                                    descricao: cmd.descricao || '',
-                                    codigo: cmd.codigo
-                                })
+                                body: JSON.stringify({ titulo: cmd.titulo, categoria: cmd.categoria, descricao: cmd.descricao || '', codigo: cmd.codigo })
                             });
                             
-                            if (res.ok) {
-                                sucessoCount++;
-                            } else {
-                                duplicadosCount++;
-                            }
-                        } catch (err) {
-                            console.error(`Erro ao importar o comando: ${cmd.titulo}`, err);
-                        }
+                            if (res.ok) sucessoCount++; else duplicadosCount++;
+                        } catch (err) {}
                     }
 
                     let msgFinal = `${sucessoCount} importados!`;
                     if (duplicadosCount > 0) msgFinal += ` (${duplicadosCount} repetidos ignorados).`;
-                    
                     mostrarToast(msgFinal);
                     
                     document.getElementById('importInput').value = '';
                     await carregarComandos();
-                    fecharTelas(true);
+                    voltarParaLista();
                     
-                } catch (error) {
-                    mostrarToast("Erro ao ler o JSON. Verifique a formatação.", true);
-                }
+                } catch (error) { mostrarToast("Erro ao ler o JSON.", true); }
             };
-            
             reader.readAsText(file);
         }
 
-        // Atualizado para funcionar perfeitamente com as tags <pre> e <code>
         function copiarCodigo() {
             navigator.clipboard.writeText(document.getElementById('det-codigo').textContent).then(() => {
                 const btn = document.getElementById('btnCopy');
