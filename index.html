@@ -28,7 +28,6 @@
         .category-btn i { font-size: 20px; width: 24px; text-align: center; }
         .category-btn:hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-main); }
         .category-btn.active { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        
         .config-btn-area { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
 
         /* Lista */
@@ -84,9 +83,7 @@
         .btn-danger { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); }
         .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); }
 
-        /* Lista de configurações */
         .cat-list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
-
         .tag { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; text-transform: uppercase; display: inline-block; background-color: rgba(255,255,255,0.1); color: var(--text-main); }
         
         #toast { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background-color: var(--success); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); opacity: 0; z-index: 1000; display: flex; align-items: center; gap: 8px; }
@@ -154,7 +151,7 @@
             </div>
         </div>
 
-        <!-- Configurações de Categorias & Importação -->
+        <!-- Configurações & Importação -->
         <div class="form-section" id="configArea">
             <h2><i class="ph ph-gear"></i> Gerenciar Categorias</h2>
             <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Adicione ferramentas novas ou edite as existentes.</p>
@@ -168,11 +165,10 @@
 
             <div id="config-cat-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
 
-            <!-- NOVO: Importação em Massa -->
             <hr style="border-color: var(--border); margin: 32px 0 24px 0;">
             <h2><i class="ph ph-upload-simple"></i> Importar Comandos em Massa</h2>
             <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-                Faça upload de um ficheiro <b>.json</b> para guardar múltiplos comandos de uma vez no banco de dados.
+                Faça upload de um ficheiro <b>.json</b> para guardar múltiplos comandos de uma vez no banco de dados. Os comandos repetidos serão bloqueados pelo sistema.
             </p>
             
             <input type="file" id="importInput" accept=".json" style="display: none;" onchange="processarImportacao(event)">
@@ -329,13 +325,13 @@
             document.getElementById('cmdCode').value = cmd.codigo;
         }
 
-        // ================= CONFIGURAÇÕES DE CATEGORIAS =================
         function abrirConfiguracoes() {
             fecharTelas();
             document.getElementById('configArea').classList.add('show');
             renderizarListaConfigCategorias();
         }
 
+        // ================= CRUD CATEGORIAS =================
         function renderizarListaConfigCategorias() {
             const container = document.getElementById('config-cat-list');
             container.innerHTML = '';
@@ -399,7 +395,59 @@
             }
         }
 
-        // ================= IMPORTAÇÃO EM MASSA (JSON) =================
+        // ================= NOVO: CRUD COMANDOS (Com bloqueio de duplicados) =================
+        async function salvarComando() {
+            const titulo = document.getElementById('cmdTitle').value;
+            const categoria = document.getElementById('cmdCategory').value;
+            const descricao = document.getElementById('cmdDesc').value;
+            const codigo = document.getElementById('cmdCode').value;
+            
+            if (!titulo || !codigo) { mostrarToast("Preencha título e comando!", true); return; }
+
+            const payload = { titulo, categoria, descricao, codigo };
+            
+            try {
+                let savedId = comandoSelecionadoId;
+                
+                if (modoEdicaoCmd) {
+                    const res = await fetch(`/comandos/${comandoSelecionadoId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        mostrarToast(errorData.error || "Erro ao atualizar.", true);
+                        return;
+                    }
+                    mostrarToast("Comando atualizado!");
+                } else {
+                    const res = await fetch('/comandos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    
+                    // Se o backend retornar erro (ex: duplicado), mostra o Toast e para aqui
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        mostrarToast(errorData.error || "Erro ao salvar.", true);
+                        return;
+                    }
+                    
+                    const novoCmd = await res.json();
+                    savedId = novoCmd.id;
+                    mostrarToast("Comando salvo!");
+                }
+                
+                await carregarComandos();
+                mostrarDetalhes(savedId);
+            } catch (error) { mostrarToast("Erro ao conectar com servidor.", true); }
+        }
+
+        async function deletarComandoSelecionado() {
+            if(confirm("Tem certeza que deseja excluir?")) {
+                await fetch(`/comandos/${comandoSelecionadoId}`, { method: 'DELETE' });
+                mostrarToast("Excluído!");
+                comandoSelecionadoId = null;
+                await carregarComandos();
+                fecharTelas(true);
+            }
+        }
+
+        // ================= IMPORTAÇÃO JSON INTELIGENTE =================
         async function processarImportacao(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -417,10 +465,11 @@
                     mostrarToast(`A importar ${comandosImportados.length} comandos...`);
                     
                     let sucessoCount = 0;
+                    let duplicadosCount = 0;
 
                     for (const cmd of comandosImportados) {
                         try {
-                            await fetch('/comandos', {
+                            const res = await fetch('/comandos', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -430,13 +479,21 @@
                                     codigo: cmd.codigo
                                 })
                             });
-                            sucessoCount++;
+                            
+                            if (res.ok) {
+                                sucessoCount++;
+                            } else {
+                                duplicadosCount++; // Backend barrou por ser repetido
+                            }
                         } catch (err) {
                             console.error(`Erro ao importar o comando: ${cmd.titulo}`, err);
                         }
                     }
 
-                    mostrarToast(`${sucessoCount} comandos importados com sucesso!`);
+                    let msgFinal = `${sucessoCount} importados!`;
+                    if (duplicadosCount > 0) msgFinal += ` (${duplicadosCount} repetidos ignorados).`;
+                    
+                    mostrarToast(msgFinal);
                     
                     document.getElementById('importInput').value = '';
                     await carregarComandos();
@@ -448,41 +505,6 @@
             };
             
             reader.readAsText(file);
-        }
-
-        // ================= CRUD COMANDOS =================
-        async function salvarComando() {
-            const titulo = document.getElementById('cmdTitle').value;
-            const categoria = document.getElementById('cmdCategory').value;
-            const descricao = document.getElementById('cmdDesc').value;
-            const codigo = document.getElementById('cmdCode').value;
-            if (!titulo || !codigo) { mostrarToast("Preencha título e comando!", true); return; }
-
-            const payload = { titulo, categoria, descricao, codigo };
-            try {
-                let savedId = comandoSelecionadoId;
-                if (modoEdicaoCmd) {
-                    await fetch(`/comandos/${comandoSelecionadoId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    mostrarToast("Comando atualizado!");
-                } else {
-                    const res = await fetch('/comandos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    const novoCmd = await res.json();
-                    savedId = novoCmd.id;
-                    mostrarToast("Comando salvo!");
-                }
-                await carregarComandos();
-                mostrarDetalhes(savedId);
-            } catch (error) { mostrarToast("Erro ao salvar.", true); }
-        }
-
-        async function deletarComandoSelecionado() {
-            if(confirm("Tem certeza que deseja excluir?")) {
-                await fetch(`/comandos/${comandoSelecionadoId}`, { method: 'DELETE' });
-                mostrarToast("Excluído!");
-                comandoSelecionadoId = null;
-                await carregarComandos();
-                fecharTelas(true);
-            }
         }
 
         function copiarCodigo() {
@@ -502,7 +524,7 @@
             toast.innerHTML = isError ? `<i class="ph-fill ph-warning-circle"></i> ${mensagem}` : `<i class="ph-fill ph-check-circle"></i> ${mensagem}`;
             toast.classList.add('show');
             clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000); // Aumentei para 4s para ler a mensagem dos repetidos
         }
 
         iniciarApp();

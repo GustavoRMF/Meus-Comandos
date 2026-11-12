@@ -1,0 +1,20 @@
+[
+  {
+    "titulo": "Acessar banco via terminal",
+    "categoria": "PostgreSQL",
+    "descricao": "Conecta ao banco usando o utilitário psql",
+    "codigo": "psql -U postgres -d meu_banco"
+  },
+  {
+    "titulo": "Listar todas as tabelas",
+    "categoria": "PostgreSQL",
+    "descricao": "Comando interno do psql para listar tabelas do schema public",
+    "codigo": "\\dt"
+  },
+  {
+    "titulo": "Backup do banco (Dump)",
+    "categoria": "PostgreSQL",
+    "descricao": "Exporta a estrutura e os dados para um arquivo .sql",
+    "codigo": "pg_dump -U postgres meu_banco > backup.sql"
+  }
+]

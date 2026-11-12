@@ -24,9 +24,21 @@ app.get('/comandos', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// NOVO: Regra de bloqueio de duplicações ao salvar um comando
 app.post('/comandos', async (req, res) => {
     const { titulo, categoria, descricao, codigo } = req.body;
     try {
+        // Verifica se já existe o mesmo título ou código
+        const checkDuplicata = await pool.query(
+            'SELECT id FROM comandos WHERE titulo = $1 OR codigo = $2',
+            [titulo, codigo]
+        );
+
+        if (checkDuplicata.rows.length > 0) {
+            return res.status(400).json({ error: 'Este Título ou Código já está salvo!' });
+        }
+
+        // Se não existir, salva no banco
         const result = await pool.query(
             'INSERT INTO comandos (titulo, categoria, descricao, codigo) VALUES ($1, $2, $3, $4) RETURNING *',
             [titulo, categoria, descricao, codigo]
@@ -55,7 +67,7 @@ app.delete('/comandos/:id', async (req, res) => {
 });
 
 // ==========================================
-// ROTAS DE CATEGORIAS (NOVO)
+// ROTAS DE CATEGORIAS
 // ==========================================
 app.get('/categorias', async (req, res) => {
     try {
