@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meus Comandos</title>
+    
+    <!-- Ícones -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- NOVO: Highlight.js (Realce de Sintaxe Colorido - Tema Atom One Dark) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
     <style>
         :root {
             --bg-base: #0f1115; --bg-panel: #161920; --bg-card: #20242d;
@@ -62,7 +69,11 @@
         .btn-icon { background-color: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: var(--transition); }
         .btn-icon:hover { background-color: rgba(255,255,255,0.1); }
         
-        .code-box { background-color: var(--code-bg); padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; overflow-x: auto; color: #10b981; border: 1px solid rgba(255,255,255,0.05); position: relative; margin-bottom: 24px; line-height: 1.5; white-space: pre-wrap; }
+        /* NOVO: Ajustes para o bloco de código com Highlight.js */
+        .code-box { background-color: var(--code-bg); padding: 20px; border-radius: 8px; font-size: 14px; overflow-x: auto; border: 1px solid rgba(255,255,255,0.05); position: relative; margin-bottom: 24px; line-height: 1.5; }
+        pre { margin: 0; font-family: 'Courier New', monospace; }
+        pre code.hljs { background: transparent; padding: 0; } /* Remove o fundo nativo do hljs para usar o nosso */
+
         .btn-copy { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.1); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--transition); }
         .btn-copy:hover { background: rgba(255,255,255,0.2); }
         .btn-copy.copied { background: var(--success); }
@@ -133,9 +144,11 @@
                     <button class="btn-icon" style="color: var(--danger); border-color: rgba(239,68,68,0.3);" onclick="deletarComandoSelecionado()"><i class="ph ph-trash"></i></button>
                 </div>
             </div>
+            
             <div class="code-box">
                 <button class="btn-copy" id="btnCopy" onclick="copiarCodigo()"><i class="ph ph-copy"></i> Copiar</button>
-                <div id="det-codigo"></div>
+                <!-- NOVO: Estrutura <pre><code> para o Highlight.js -->
+                <pre><code id="det-codigo"></code></pre>
             </div>
         </div>
 
@@ -280,7 +293,7 @@
             });
         }
 
-        // ================= NAVEGAÇÃO DE TELAS =================
+        // ================= NAVEGAÇÃO DE TELAS E REALCE DE SINTAXE =================
         function fecharTelas(mostrarEmpty = false) {
             document.getElementById('emptyState').classList.remove('show');
             document.getElementById('viewArea').classList.remove('show');
@@ -299,7 +312,29 @@
             document.getElementById('det-tag').innerText = cmd.categoria;
             document.getElementById('det-titulo').innerText = cmd.titulo;
             document.getElementById('det-desc').innerText = cmd.descricao || 'Sem descrição.';
-            document.getElementById('det-codigo').innerText = cmd.codigo;
+            
+            // NOVO: Lógica do Highlight.js
+            const codeBlock = document.getElementById('det-codigo');
+            codeBlock.textContent = cmd.codigo; // Insere o código puro
+            
+            // Limpa as classes anteriores do Highlight.js
+            codeBlock.className = '';
+            
+            // Mapeia a Categoria para a linguagem correta para o colorido ficar exato
+            const catLower = (cmd.categoria || '').toLowerCase();
+            let linguagem = 'plaintext';
+            if (catLower.includes('python')) linguagem = 'language-python';
+            else if (catLower.includes('javascript') || catLower.includes('node')) linguagem = 'language-javascript';
+            else if (catLower.includes('sql') || catLower.includes('postgres')) linguagem = 'language-sql';
+            else if (catLower.includes('git') || catLower.includes('linux') || catLower.includes('docker')) linguagem = 'language-bash';
+            else if (catLower.includes('html')) linguagem = 'language-html';
+            else if (catLower.includes('css')) linguagem = 'language-css';
+            else if (catLower.includes('json')) linguagem = 'language-json';
+
+            codeBlock.classList.add(linguagem);
+            
+            // Manda a biblioteca colorir
+            hljs.highlightElement(codeBlock);
         }
 
         function mostrarFormulario() {
@@ -395,7 +430,7 @@
             }
         }
 
-        // ================= NOVO: CRUD COMANDOS (Com bloqueio de duplicados) =================
+        // ================= CRUD COMANDOS =================
         async function salvarComando() {
             const titulo = document.getElementById('cmdTitle').value;
             const categoria = document.getElementById('cmdCategory').value;
@@ -420,7 +455,6 @@
                 } else {
                     const res = await fetch('/comandos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     
-                    // Se o backend retornar erro (ex: duplicado), mostra o Toast e para aqui
                     if (!res.ok) {
                         const errorData = await res.json();
                         mostrarToast(errorData.error || "Erro ao salvar.", true);
@@ -483,7 +517,7 @@
                             if (res.ok) {
                                 sucessoCount++;
                             } else {
-                                duplicadosCount++; // Backend barrou por ser repetido
+                                duplicadosCount++;
                             }
                         } catch (err) {
                             console.error(`Erro ao importar o comando: ${cmd.titulo}`, err);
@@ -507,8 +541,9 @@
             reader.readAsText(file);
         }
 
+        // Atualizado para funcionar perfeitamente com as tags <pre> e <code>
         function copiarCodigo() {
-            navigator.clipboard.writeText(document.getElementById('det-codigo').innerText).then(() => {
+            navigator.clipboard.writeText(document.getElementById('det-codigo').textContent).then(() => {
                 const btn = document.getElementById('btnCopy');
                 btn.innerHTML = `<i class="ph-fill ph-check-circle"></i> Copiado`;
                 btn.classList.add('copied');
@@ -524,7 +559,7 @@
             toast.innerHTML = isError ? `<i class="ph-fill ph-warning-circle"></i> ${mensagem}` : `<i class="ph-fill ph-check-circle"></i> ${mensagem}`;
             toast.classList.add('show');
             clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000); // Aumentei para 4s para ler a mensagem dos repetidos
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000);
         }
 
         iniciarApp();
