@@ -25,6 +25,21 @@
         ::-webkit-scrollbar-track { background: var(--bg-base); }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
 
+        /* TELA DE LOGIN */
+        #loginScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-base); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-card {
+            background-color: var(--bg-panel); border: 1px solid var(--border);
+            padding: 40px; border-radius: 16px; width: 100%; max-width: 380px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;
+        }
+        .login-card i { font-size: 48px; color: var(--primary); margin-bottom: 16px; }
+        .login-card h2 { margin-bottom: 8px; font-size: 22px; }
+        .login-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+
         /* Sidebar */
         .sidebar { width: 240px; background-color: var(--bg-panel); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; transition: left 0.3s ease; }
         .sidebar h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 16px; padding-left: 12px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
@@ -53,7 +68,6 @@
         .cmd-item.active { background-color: rgba(99, 102, 241, 0.1); border-color: var(--primary); }
         .cmd-item h4 { font-size: 14px; color: var(--text-main); display: flex; align-items: center; gap: 6px; margin: 0; }
         .cmd-item p { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 6px; }
-        
         .star-btn { padding: 4px; background: transparent; border: none; cursor: pointer; font-size: 18px; transition: transform 0.2s; }
         .star-btn:hover { transform: scale(1.2); }
 
@@ -73,7 +87,6 @@
         .btn-icon { background-color: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: var(--transition); }
         .btn-icon:hover { background-color: rgba(255,255,255,0.1); }
         
-        /* Sintaxe Colorida e Código */
         .code-box { background-color: var(--code-bg); padding: 20px; border-radius: 8px; font-size: 14px; overflow-x: auto; border: 1px solid rgba(255,255,255,0.05); position: relative; margin-bottom: 24px; line-height: 1.5; }
         pre { margin: 0; font-family: 'Courier New', monospace; }
         pre code.hljs { background: transparent; padding: 0; } 
@@ -93,6 +106,7 @@
         .form-actions { display: flex; gap: 12px; margin-top: 24px; }
         .btn { border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
         
         .cat-list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
         .tag { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; text-transform: uppercase; display: inline-block; background-color: rgba(255,255,255,0.1); color: var(--text-main); }
@@ -100,7 +114,6 @@
         #toast { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background-color: var(--success); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); opacity: 0; z-index: 1000; display: flex; align-items: center; gap: 8px; }
         #toast.show { bottom: 30px; opacity: 1; }
 
-        /* Utilitário Mobile */
         .mobile-only { display: none; }
         @media (max-width: 768px) {
             .mobile-only { display: flex; }
@@ -116,6 +129,21 @@
     </style>
 </head>
 <body>
+
+    <!-- TELA DE LOGIN (Oculta por padrão até verificar sessão) -->
+    <div id="loginScreen" style="display: none;">
+        <div class="login-card">
+            <i class="ph ph-lock-key"></i>
+            <h2>Área Protegida</h2>
+            <p>Introduza a senha de acesso ao gerenciador.</p>
+            <form onsubmit="fazerLogin(event)">
+                <div class="input-group" style="text-align: left;">
+                    <input type="password" id="senhaInput" placeholder="Senha..." required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
+            </form>
+        </div>
+    </div>
     
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="fecharMenu()"></div>
 
@@ -162,7 +190,6 @@
                     <p class="detail-desc" id="det-desc">Descrição</p>
                 </div>
                 <div class="card-actions">
-                    <!-- Botão de Favoritar em Destaque -->
                     <button class="btn-icon" id="btnFavDetalhe" onclick="toggleFavoritoDetalhe()"><i class="ph ph-star"></i> Favoritar</button>
                     <button class="btn-icon" onclick="editarComandoSelecionado()"><i class="ph ph-pencil-simple"></i> Editar</button>
                     <button class="btn-icon" style="color: var(--danger); border-color: rgba(239,68,68,0.3);" onclick="deletarComandoSelecionado()"><i class="ph ph-trash"></i></button>
@@ -175,7 +202,6 @@
             </div>
         </div>
 
-        <!-- Demais Telas Ocultas (Formulários e Configurações) -->
         <div class="form-section" id="formArea">
             <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar</button>
             <h2 id="form-titulo"><i class="ph ph-plus-circle"></i> Adicionar Comando</h2>
@@ -191,8 +217,8 @@
 
         <div class="form-section" id="configArea">
             <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar</button>
-            <h2><i class="ph ph-gear"></i> Gerenciar Categorias</h2>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Adicione ferramentas novas ou edite as existentes.</p>
+            <h2><i class="ph ph-gear"></i> Configurações</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Gerencie suas categorias, importe dados ou saia da conta.</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;">
                 <input type="text" id="catNameInput" placeholder="Nome (ex: React)" style="flex: 2; min-width: 120px;">
@@ -205,13 +231,17 @@
 
             <hr style="border-color: var(--border); margin: 32px 0 24px 0;">
             <h2><i class="ph ph-upload-simple"></i> Importar em Massa</h2>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-                Faça upload de um ficheiro <b>.json</b>.
-            </p>
-            
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Faça upload de um ficheiro <b>.json</b>.</p>
             <input type="file" id="importInput" accept=".json" style="display: none;" onchange="processarImportacao(event)">
             <button class="btn btn-primary" onclick="document.getElementById('importInput').click()" style="background-color: #10b981;">
                 <i class="ph ph-file-arrow-up"></i> Selecionar JSON
+            </button>
+
+            <!-- NOVO: Botão de Logout -->
+            <hr style="border-color: var(--border); margin: 32px 0 24px 0;">
+            <h2><i class="ph ph-sign-out"></i> Sessão</h2>
+            <button class="btn" onclick="fazerLogout()" style="background-color: var(--danger); color: white; width: 100%;">
+                <i class="ph ph-sign-out"></i> Terminar Sessão (Logout)
             </button>
         </div>
 
@@ -227,12 +257,60 @@
         let idCategoriaEditando = null;
         let modoEdicaoCmd = false;
 
+        // VERIFICA SE ESTÁ LOGADO AO ABRIR A PÁGINA
+        async function verificarSessao() {
+            try {
+                const res = await fetch('/api/verificar');
+                const data = await res.json();
+                
+                if (data.logado) {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    iniciarApp();
+                } else {
+                    document.getElementById('loginScreen').style.display = 'flex';
+                }
+            } catch (err) {
+                document.getElementById('loginScreen').style.display = 'flex';
+            }
+        }
+
+        async function fazerLogin(event) {
+            event.preventDefault();
+            const senha = document.getElementById('senhaInput').value;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senha })
+                });
+
+                if (res.ok) {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    mostrarToast("Login efetuado com sucesso!");
+                    iniciarApp();
+                } else {
+                    mostrarToast("Senha incorreta!", true);
+                }
+            } catch (err) {
+                mostrarToast("Erro ao conectar com o servidor.", true);
+            }
+        }
+
+        async function fazerLogout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.reload(); // Recarrega a página e exibe a tela de login
+            } catch (err) {
+                mostrarToast("Erro ao fazer logout.", true);
+            }
+        }
+
         async function iniciarApp() {
             await carregarCategorias();
             await carregarComandos();
         }
 
-        // ================= CONTROLES MOBILE =================
         function abrirMenu() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
         function fecharMenu() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
         function voltarParaLista() { document.getElementById('detailColumn').classList.remove('active-mobile'); fecharTelas(true); }
@@ -240,6 +318,7 @@
         async function carregarCategorias() {
             try {
                 const res = await fetch('/categorias');
+                if(res.status === 401) { verificarSessao(); return; }
                 categoriasSalvas = await res.json();
                 renderizarSidebar();
                 atualizarDropdownCategorias();
@@ -249,12 +328,12 @@
         async function carregarComandos() {
             try {
                 const res = await fetch('/comandos');
+                if(res.status === 401) { verificarSessao(); return; }
                 comandosSalvos = await res.json();
                 renderizarLista();
             } catch (error) { mostrarToast("Erro ao carregar comandos.", true); }
         }
 
-        // ================= UI =================
         function renderizarSidebar() {
             const menu = document.getElementById('sidebar-menu');
             menu.innerHTML = '';
@@ -295,32 +374,20 @@
             renderizarLista();
         }
 
-        // ================= LÓGICA DE FAVORITOS E LISTA =================
         async function toggleFavorito(id, novoStatus, event) {
-            if(event) event.stopPropagation(); // Impede que abrir o comando atrapalhe o clique na estrela
-            
+            if(event) event.stopPropagation();
             try {
                 await fetch(`/comandos/${id}/favorito`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ favorito: novoStatus })
                 });
-                
-                // Atualiza a lista na memória e na tela sem precisar recarregar o banco todo
                 const index = comandosSalvos.findIndex(c => c.id === id);
                 if (index !== -1) comandosSalvos[index].favorito = novoStatus;
-                
-                // Reordena para os favoritos subirem
                 comandosSalvos.sort((a, b) => (b.favorito === true) - (a.favorito === true) || b.id - a.id);
-                
                 renderizarLista();
-                
-                // Atualiza o botão da tela de detalhes se estiver aberto
                 if (comandoSelecionadoId === id) mostrarDetalhes(id);
-                
-            } catch (error) {
-                mostrarToast("Erro ao favoritar.", true);
-            }
+            } catch (error) { mostrarToast("Erro ao favoritar.", true); }
         }
 
         function toggleFavoritoDetalhe() {
@@ -334,7 +401,6 @@
             container.innerHTML = '';
 
             let comandosFiltrados = categoriaAtual === 'Todas' ? comandosSalvos : comandosSalvos.filter(c => c.categoria === categoriaAtual);
-            
             if (termoBusca) {
                 comandosFiltrados = comandosFiltrados.filter(c => c.titulo.toLowerCase().includes(termoBusca) || c.codigo.toLowerCase().includes(termoBusca));
             }
@@ -351,7 +417,6 @@
                 
                 const catInfo = categoriasSalvas.find(c => c.nome === cmd.categoria);
                 const icone = catInfo ? catInfo.icone : 'ph-folder';
-
                 const iconStar = cmd.favorito ? 'ph-fill ph-star' : 'ph ph-star';
                 const colorStar = cmd.favorito ? 'color: var(--fav);' : 'color: var(--text-muted);';
 
@@ -368,7 +433,6 @@
             });
         }
 
-        // ================= NAVEGAÇÃO DE TELAS E REALCE DE SINTAXE =================
         function fecharTelas(mostrarEmpty = false) {
             document.getElementById('emptyState').classList.remove('show');
             document.getElementById('viewArea').classList.remove('show');
@@ -382,14 +446,13 @@
             fecharTelas();
             document.getElementById('viewArea').classList.add('show');
             document.getElementById('detailColumn').classList.add('active-mobile');
-            renderizarLista(); // Para aplicar a classe 'active' visualmente
+            renderizarLista();
 
             const cmd = comandosSalvos.find(c => c.id === id);
             document.getElementById('det-tag').innerText = cmd.categoria;
             document.getElementById('det-titulo').innerText = cmd.titulo;
             document.getElementById('det-desc').innerText = cmd.descricao || 'Sem descrição.';
             
-            // Atualiza o botão de favoritar da tela de detalhes
             const btnFav = document.getElementById('btnFavDetalhe');
             btnFav.innerHTML = cmd.favorito ? '<i class="ph-fill ph-star"></i> Remov. Favorito' : '<i class="ph ph-star"></i> Favoritar';
             btnFav.style.color = cmd.favorito ? 'var(--fav)' : 'var(--text-main)';
@@ -445,7 +508,6 @@
             renderizarListaConfigCategorias();
         }
 
-        // ================= CRUD CATEGORIAS E DEMAIS FUNÇÕES =================
         function renderizarListaConfigCategorias() {
             const container = document.getElementById('config-cat-list');
             container.innerHTML = '';
@@ -571,6 +633,7 @@
                     mostrarToast(msgFinal);
                     document.getElementById('importInput').value = '';
                     await carregarComandos();
+                    voltarParaLogOff = false;
                     voltarParaLista();
                 } catch (error) { mostrarToast("Erro ao ler o JSON.", true); }
             };
@@ -597,7 +660,8 @@
             toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000);
         }
 
-        iniciarApp();
+        // Inicia checando a sessão ao carregar a página
+        verificarSessao();
     </script>
 </body>
 </html>

@@ -1,11 +1,20 @@
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
 const { Pool } = require('pg');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Configuração da Sessão do Navegador
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'segredo_super_secreto_comandos',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // Dura 30 dias logado
+}));
 
 app.use(express.static(__dirname)); 
 
@@ -14,18 +23,56 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
+// Senha de Acesso (Defina no Render ou use '123456' como padrão)
+const SENHA_MESTRE = process.env.SENHA_MESTRE || '19941205';
+
 // ==========================================
-// ROTAS DE COMANDOS
+// PORTÃO DE SEGURANÇA (MIDDLEWARE)
 // ==========================================
-app.get('/comandos', async (req, res) => {
+function verificarAuth(req, res, next) {
+    if (req.session && req.session.logado) {
+        return next(); // Pode passar
+    }
+    res.status(401).json({ error: 'Não autorizado. Faça login primeiro.' });
+}
+
+// ==========================================
+// ROTAS DE AUTENTICAÇÃO
+// ==========================================
+app.post('/api/login', (req, res) => {
+    const { senha } = req.body;
+    if (senha === SENHA_MESTRE) {
+        req.session.logado = true;
+        res.json({ success: true, message: 'Login bem-sucedido!' });
+    } else {
+        res.status(401).json({ error: 'Senha incorreta!' });
+    }
+});
+
+app.get('/api/verificar', (req, res) => {
+    if (req.session && req.session.logado) {
+        res.json({ logado: true });
+    } else {
+        res.json({ logado: false });
+    }
+});
+
+app.post('/api/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ success: true });
+});
+
+// ==========================================
+// ROTAS DE COMANDOS (Protegidas pelo verificarAuth)
+// ==========================================
+app.get('/comandos', verificarAuth, async (req, res) => {
     try {
-        // ATUALIZADO: Traz os favoritos primeiro, depois organiza pelos mais novos
         const result = await pool.query('SELECT * FROM comandos ORDER BY favorito DESC, id DESC');
         res.json(result.rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/comandos', async (req, res) => {
+app.post('/comandos', verificarAuth, async (req, res) => {
     const { titulo, categoria, descricao, codigo } = req.body;
     try {
         const checkDuplicata = await pool.query(
@@ -43,7 +90,7 @@ app.post('/comandos', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/comandos/:id', async (req, res) => {
+app.put('/comandos/:id', verificarAuth, async (req, res) => {
     const { id } = req.params;
     const { titulo, categoria, descricao, codigo } = req.body;
     try {
@@ -55,8 +102,7 @@ app.put('/comandos/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// NOVO: Rota específica para ligar/desligar o Favorito
-app.patch('/comandos/:id/favorito', async (req, res) => {
+app.patch('/comandos/:id/favorito', verificarAuth, async (req, res) => {
     const { id } = req.params;
     const { favorito } = req.body;
     try {
@@ -68,7 +114,7 @@ app.patch('/comandos/:id/favorito', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/comandos/:id', async (req, res) => {
+app.delete('/comandos/:id', verificarAuth, async (req, res) => {
     try {
         await pool.query('DELETE FROM comandos WHERE id = $1', [req.params.id]);
         res.json({ message: 'Comando deletado' });
@@ -76,16 +122,16 @@ app.delete('/comandos/:id', async (req, res) => {
 });
 
 // ==========================================
-// ROTAS DE CATEGORIAS
+// ROTAS DE CATEGORIAS (Protegidas pelo verificarAuth)
 // ==========================================
-app.get('/categorias', async (req, res) => {
+app.get('/categorias', verificarAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM categorias ORDER BY id ASC');
         res.json(result.rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/categorias', async (req, res) => {
+app.post('/categorias', verificarAuth, async (req, res) => {
     const { nome, icone } = req.body;
     try {
         const result = await pool.query(
@@ -96,7 +142,7 @@ app.post('/categorias', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/categorias/:id', async (req, res) => {
+app.put('/categorias/:id', verificarAuth, async (req, res) => {
     const { id } = req.params;
     const { nome, icone } = req.body;
     try {
@@ -108,7 +154,7 @@ app.put('/categorias/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/categorias/:id', async (req, res) => {
+app.delete('/categorias/:id', verificarAuth, async (req, res) => {
     try {
         await pool.query('DELETE FROM categorias WHERE id = $1', [req.params.id]);
         res.json({ message: 'Categoria deletada' });
