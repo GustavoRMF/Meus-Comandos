@@ -16,6 +16,7 @@
             --success: #10b981; --danger: #ef4444;
             --text-main: #f8fafc; --text-muted: #94a3b8;
             --border: #334155; --code-bg: #0b0f19;
+            --fav: #facc15;
             --transition: all 0.2s ease;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,8 +34,6 @@
         .category-btn:hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-main); }
         .category-btn.active { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
         .config-btn-area { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
-
-        /* Overlay do Menu Mobile */
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; opacity: 0; transition: opacity 0.3s; }
         .sidebar-overlay.show { display: block; opacity: 1; }
 
@@ -48,11 +47,15 @@
         .search-bar i { color: var(--text-muted); font-size: 16px; }
         .search-bar input { border: none; background: transparent; padding: 10px; color: white; width: 100%; outline: none; font-size: 13px; }
         .list-items { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+        
         .cmd-item { padding: 14px; background-color: var(--bg-panel); border-radius: 8px; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; }
         .cmd-item:hover { border-color: #475569; }
         .cmd-item.active { background-color: rgba(99, 102, 241, 0.1); border-color: var(--primary); }
-        .cmd-item h4 { font-size: 14px; margin-bottom: 6px; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
-        .cmd-item p { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cmd-item h4 { font-size: 14px; color: var(--text-main); display: flex; align-items: center; gap: 6px; margin: 0; }
+        .cmd-item p { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 6px; }
+        
+        .star-btn { padding: 4px; background: transparent; border: none; cursor: pointer; font-size: 18px; transition: transform 0.2s; }
+        .star-btn:hover { transform: scale(1.2); }
 
         /* Área Principal */
         .detail-column { flex: 1; background-color: var(--bg-base); padding: 40px; display: flex; flex-direction: column; overflow-y: auto; transition: left 0.3s ease; }
@@ -66,7 +69,7 @@
         .detail-title-area h1 { font-size: 26px; margin: 12px 0; }
         .detail-desc { color: var(--text-muted); font-size: 15px; line-height: 1.6; }
         
-        .card-actions { display: flex; gap: 8px; }
+        .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn-icon { background-color: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: var(--transition); }
         .btn-icon:hover { background-color: rgba(255,255,255,0.1); }
         
@@ -78,7 +81,7 @@
         .btn-copy:hover { background: rgba(255,255,255,0.2); }
         .btn-copy.copied { background: var(--success); }
 
-        /* Formulários Comandos e Configuração */
+        /* Formulários */
         .form-section { background-color: var(--bg-panel); border: 1px solid var(--border); padding: 30px; border-radius: 12px; max-width: 800px; }
         .form-section h2 { margin-bottom: 24px; font-size: 20px; display: flex; align-items: center; gap: 8px; }
         .input-group { margin-bottom: 16px; }
@@ -99,22 +102,13 @@
 
         /* Utilitário Mobile */
         .mobile-only { display: none; }
-
-        /* ================= MEDIA QUERIES (MOBILE) ================= */
         @media (max-width: 768px) {
             .mobile-only { display: flex; }
-            
-            /* Sidebar vira Menu Lateral Flutuante */
             .sidebar { position: fixed; left: -260px; top: 0; height: 100%; z-index: 999; box-shadow: 4px 0 15px rgba(0,0,0,0.5); }
             .sidebar.open { left: 0; }
-            
-            /* Lista ocupa 100% da tela inicial */
             .list-column { width: 100%; border-right: none; }
-            
-            /* Tela de Detalhes vira uma "Gaveta" que desliza por cima */
             .detail-column { position: fixed; left: 100%; top: 0; width: 100%; height: 100%; z-index: 900; background-color: var(--bg-base); padding: 20px; }
             .detail-column.active-mobile { left: 0; }
-
             .detail-header { flex-direction: column; gap: 16px; }
             .card-actions { width: 100%; justify-content: flex-start; }
             .form-section { padding: 20px; border: none; }
@@ -137,12 +131,10 @@
     <!-- 2. Coluna da Lista -->
     <section class="list-column">
         <div class="list-header">
-            <!-- NOVO: Botão Hambúrguer para Mobile -->
             <div style="display: flex; gap: 10px; margin-bottom: 16px;">
                 <button class="btn-icon mobile-only" onclick="abrirMenu()" style="padding: 12px;"><i class="ph ph-list" style="font-size: 20px;"></i></button>
                 <button class="btn-new" onclick="mostrarFormulario()" style="margin-bottom: 0;"><i class="ph-bold ph-plus"></i> Novo Comando</button>
             </div>
-            
             <div class="search-bar">
                 <i class="ph ph-magnifying-glass"></i>
                 <input type="text" id="searchInput" placeholder="Buscar em..." onkeyup="renderizarLista()">
@@ -161,7 +153,6 @@
         </div>
 
         <div class="view-section" id="viewArea">
-            <!-- NOVO: Botão Voltar para Mobile -->
             <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar à Lista</button>
             
             <div class="detail-header">
@@ -171,6 +162,8 @@
                     <p class="detail-desc" id="det-desc">Descrição</p>
                 </div>
                 <div class="card-actions">
+                    <!-- Botão de Favoritar em Destaque -->
+                    <button class="btn-icon" id="btnFavDetalhe" onclick="toggleFavoritoDetalhe()"><i class="ph ph-star"></i> Favoritar</button>
                     <button class="btn-icon" onclick="editarComandoSelecionado()"><i class="ph ph-pencil-simple"></i> Editar</button>
                     <button class="btn-icon" style="color: var(--danger); border-color: rgba(239,68,68,0.3);" onclick="deletarComandoSelecionado()"><i class="ph ph-trash"></i></button>
                 </div>
@@ -182,6 +175,7 @@
             </div>
         </div>
 
+        <!-- Demais Telas Ocultas (Formulários e Configurações) -->
         <div class="form-section" id="formArea">
             <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar</button>
             <h2 id="form-titulo"><i class="ph ph-plus-circle"></i> Adicionar Comando</h2>
@@ -239,20 +233,9 @@
         }
 
         // ================= CONTROLES MOBILE =================
-        function abrirMenu() {
-            document.getElementById('sidebar').classList.add('open');
-            document.getElementById('sidebarOverlay').classList.add('show');
-        }
-
-        function fecharMenu() {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('show');
-        }
-
-        function voltarParaLista() {
-            document.getElementById('detailColumn').classList.remove('active-mobile');
-            fecharTelas(true);
-        }
+        function abrirMenu() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
+        function fecharMenu() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
+        function voltarParaLista() { document.getElementById('detailColumn').classList.remove('active-mobile'); fecharTelas(true); }
 
         async function carregarCategorias() {
             try {
@@ -307,9 +290,42 @@
             document.getElementById('searchInput').placeholder = `Buscar em ${catNome}...`;
             document.getElementById('searchInput').value = '';
             fecharTelas(true);
-            fecharMenu(); // Fecha o menu no telemóvel ao escolher a categoria
+            fecharMenu();
             renderizarSidebar();
             renderizarLista();
+        }
+
+        // ================= LÓGICA DE FAVORITOS E LISTA =================
+        async function toggleFavorito(id, novoStatus, event) {
+            if(event) event.stopPropagation(); // Impede que abrir o comando atrapalhe o clique na estrela
+            
+            try {
+                await fetch(`/comandos/${id}/favorito`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ favorito: novoStatus })
+                });
+                
+                // Atualiza a lista na memória e na tela sem precisar recarregar o banco todo
+                const index = comandosSalvos.findIndex(c => c.id === id);
+                if (index !== -1) comandosSalvos[index].favorito = novoStatus;
+                
+                // Reordena para os favoritos subirem
+                comandosSalvos.sort((a, b) => (b.favorito === true) - (a.favorito === true) || b.id - a.id);
+                
+                renderizarLista();
+                
+                // Atualiza o botão da tela de detalhes se estiver aberto
+                if (comandoSelecionadoId === id) mostrarDetalhes(id);
+                
+            } catch (error) {
+                mostrarToast("Erro ao favoritar.", true);
+            }
+        }
+
+        function toggleFavoritoDetalhe() {
+            const cmd = comandosSalvos.find(c => c.id === comandoSelecionadoId);
+            if (cmd) toggleFavorito(cmd.id, !cmd.favorito);
         }
 
         function renderizarLista() {
@@ -336,7 +352,18 @@
                 const catInfo = categoriasSalvas.find(c => c.nome === cmd.categoria);
                 const icone = catInfo ? catInfo.icone : 'ph-folder';
 
-                item.innerHTML = `<h4><i class="ph ${icone}" style="color:var(--primary);"></i> ${cmd.titulo}</h4><p>${cmd.descricao || cmd.codigo}</p>`;
+                const iconStar = cmd.favorito ? 'ph-fill ph-star' : 'ph ph-star';
+                const colorStar = cmd.favorito ? 'color: var(--fav);' : 'color: var(--text-muted);';
+
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h4 style="margin: 0;"><i class="ph ${icone}" style="color:var(--primary);"></i> ${cmd.titulo}</h4>
+                        <button class="star-btn" style="${colorStar}" onclick="toggleFavorito(${cmd.id}, ${!cmd.favorito}, event)">
+                            <i class="${iconStar}"></i>
+                        </button>
+                    </div>
+                    <p>${cmd.descricao || cmd.codigo}</p>
+                `;
                 container.appendChild(item);
             });
         }
@@ -347,28 +374,29 @@
             document.getElementById('viewArea').classList.remove('show');
             document.getElementById('formArea').classList.remove('show');
             document.getElementById('configArea').classList.remove('show');
-            if(mostrarEmpty) {
-                document.getElementById('emptyState').classList.add('show');
-            }
+            if(mostrarEmpty) document.getElementById('emptyState').classList.add('show');
         }
 
         function mostrarDetalhes(id) {
             comandoSelecionadoId = id;
             fecharTelas();
             document.getElementById('viewArea').classList.add('show');
-            document.getElementById('detailColumn').classList.add('active-mobile'); // Abre gaveta no mobile
-            renderizarLista();
+            document.getElementById('detailColumn').classList.add('active-mobile');
+            renderizarLista(); // Para aplicar a classe 'active' visualmente
 
             const cmd = comandosSalvos.find(c => c.id === id);
             document.getElementById('det-tag').innerText = cmd.categoria;
             document.getElementById('det-titulo').innerText = cmd.titulo;
             document.getElementById('det-desc').innerText = cmd.descricao || 'Sem descrição.';
             
+            // Atualiza o botão de favoritar da tela de detalhes
+            const btnFav = document.getElementById('btnFavDetalhe');
+            btnFav.innerHTML = cmd.favorito ? '<i class="ph-fill ph-star"></i> Remov. Favorito' : '<i class="ph ph-star"></i> Favoritar';
+            btnFav.style.color = cmd.favorito ? 'var(--fav)' : 'var(--text-main)';
+            
             const codeBlock = document.getElementById('det-codigo');
             codeBlock.textContent = cmd.codigo;
             codeBlock.className = ''; 
-            
-            // CORREÇÃO DO BUG DO HIGHLIGHT.JS (Limpa o cache)
             delete codeBlock.dataset.highlighted;
             
             const catLower = (cmd.categoria || '').toLowerCase();
@@ -382,13 +410,13 @@
             else if (catLower.includes('json')) linguagem = 'language-json';
 
             codeBlock.classList.add(linguagem);
-            hljs.highlightElement(codeBlock); // Pinta novamente o código com as cores
+            hljs.highlightElement(codeBlock);
         }
 
         function mostrarFormulario() {
             fecharTelas();
             document.getElementById('formArea').classList.add('show');
-            document.getElementById('detailColumn').classList.add('active-mobile'); // Abre gaveta no mobile
+            document.getElementById('detailColumn').classList.add('active-mobile');
             modoEdicaoCmd = false;
             document.getElementById('form-titulo').innerHTML = `<i class="ph ph-plus-circle"></i> Adicionar Comando`;
             document.getElementById('cmdTitle').value = '';
@@ -412,12 +440,12 @@
         function abrirConfiguracoes() {
             fecharTelas();
             document.getElementById('configArea').classList.add('show');
-            document.getElementById('detailColumn').classList.add('active-mobile'); // Abre gaveta no mobile
+            document.getElementById('detailColumn').classList.add('active-mobile');
             fecharMenu();
             renderizarListaConfigCategorias();
         }
 
-        // ================= CRUD CATEGORIAS E RESTO DO CÓDIGO PERMANECE IGUAL =================
+        // ================= CRUD CATEGORIAS E DEMAIS FUNÇÕES =================
         function renderizarListaConfigCategorias() {
             const container = document.getElementById('config-cat-list');
             container.innerHTML = '';
@@ -486,38 +514,24 @@
             const categoria = document.getElementById('cmdCategory').value;
             const descricao = document.getElementById('cmdDesc').value;
             const codigo = document.getElementById('cmdCode').value;
-            
             if (!titulo || !codigo) { mostrarToast("Preencha título e comando!", true); return; }
 
             const payload = { titulo, categoria, descricao, codigo };
-            
             try {
                 let savedId = comandoSelecionadoId;
-                
                 if (modoEdicaoCmd) {
                     const res = await fetch(`/comandos/${comandoSelecionadoId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!res.ok) {
-                        const errorData = await res.json();
-                        mostrarToast(errorData.error || "Erro ao atualizar.", true);
-                        return;
-                    }
+                    if (!res.ok) { const errorData = await res.json(); mostrarToast(errorData.error || "Erro.", true); return; }
                     mostrarToast("Comando atualizado!");
                 } else {
                     const res = await fetch('/comandos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!res.ok) {
-                        const errorData = await res.json();
-                        mostrarToast(errorData.error || "Erro ao salvar.", true);
-                        return;
-                    }
-                    
-                    const novoCmd = await res.json();
-                    savedId = novoCmd.id;
+                    if (!res.ok) { const errorData = await res.json(); mostrarToast(errorData.error || "Erro.", true); return; }
+                    const novoCmd = await res.json(); savedId = novoCmd.id;
                     mostrarToast("Comando salvo!");
                 }
-                
                 await carregarComandos();
                 mostrarDetalhes(savedId);
-            } catch (error) { mostrarToast("Erro ao conectar com servidor.", true); }
+            } catch (error) { mostrarToast("Erro ao conectar.", true); }
         }
 
         async function deletarComandoSelecionado() {
@@ -538,13 +552,10 @@
             reader.onload = async function(e) {
                 try {
                     const comandosImportados = JSON.parse(e.target.result);
-                    if (!Array.isArray(comandosImportados)) { mostrarToast("Erro: Ficheiro JSON inválido.", true); return; }
-
-                    mostrarToast(`A importar ${comandosImportados.length} comandos...`);
+                    if (!Array.isArray(comandosImportados)) { mostrarToast("Erro: JSON inválido.", true); return; }
+                    mostrarToast(`A importar...`);
                     
-                    let sucessoCount = 0;
-                    let duplicadosCount = 0;
-
+                    let sucessoCount = 0; let duplicadosCount = 0;
                     for (const cmd of comandosImportados) {
                         try {
                             const res = await fetch('/comandos', {
@@ -552,19 +563,15 @@
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ titulo: cmd.titulo, categoria: cmd.categoria, descricao: cmd.descricao || '', codigo: cmd.codigo })
                             });
-                            
                             if (res.ok) sucessoCount++; else duplicadosCount++;
                         } catch (err) {}
                     }
-
                     let msgFinal = `${sucessoCount} importados!`;
-                    if (duplicadosCount > 0) msgFinal += ` (${duplicadosCount} repetidos ignorados).`;
+                    if (duplicadosCount > 0) msgFinal += ` (${duplicadosCount} repetidos).`;
                     mostrarToast(msgFinal);
-                    
                     document.getElementById('importInput').value = '';
                     await carregarComandos();
                     voltarParaLista();
-                    
                 } catch (error) { mostrarToast("Erro ao ler o JSON.", true); }
             };
             reader.readAsText(file);

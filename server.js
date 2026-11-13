@@ -19,26 +19,22 @@ const pool = new Pool({
 // ==========================================
 app.get('/comandos', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM comandos ORDER BY id DESC');
+        // ATUALIZADO: Traz os favoritos primeiro, depois organiza pelos mais novos
+        const result = await pool.query('SELECT * FROM comandos ORDER BY favorito DESC, id DESC');
         res.json(result.rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// NOVO: Regra de bloqueio de duplicações ao salvar um comando
 app.post('/comandos', async (req, res) => {
     const { titulo, categoria, descricao, codigo } = req.body;
     try {
-        // Verifica se já existe o mesmo título ou código
         const checkDuplicata = await pool.query(
             'SELECT id FROM comandos WHERE titulo = $1 OR codigo = $2',
             [titulo, codigo]
         );
-
         if (checkDuplicata.rows.length > 0) {
             return res.status(400).json({ error: 'Este Título ou Código já está salvo!' });
         }
-
-        // Se não existir, salva no banco
         const result = await pool.query(
             'INSERT INTO comandos (titulo, categoria, descricao, codigo) VALUES ($1, $2, $3, $4) RETURNING *',
             [titulo, categoria, descricao, codigo]
@@ -54,6 +50,19 @@ app.put('/comandos/:id', async (req, res) => {
         const result = await pool.query(
             'UPDATE comandos SET titulo = $1, categoria = $2, descricao = $3, codigo = $4 WHERE id = $5 RETURNING *',
             [titulo, categoria, descricao, codigo, id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// NOVO: Rota específica para ligar/desligar o Favorito
+app.patch('/comandos/:id/favorito', async (req, res) => {
+    const { id } = req.params;
+    const { favorito } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE comandos SET favorito = $1 WHERE id = $2 RETURNING *',
+            [favorito, id]
         );
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
