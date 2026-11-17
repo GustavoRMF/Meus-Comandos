@@ -130,7 +130,7 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN (Oculta por padrão até verificar sessão) -->
+    <!-- TELA DE LOGIN -->
     <div id="loginScreen" style="display: none;">
         <div class="login-card">
             <i class="ph ph-lock-key"></i>
@@ -218,7 +218,7 @@
         <div class="form-section" id="configArea">
             <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar</button>
             <h2><i class="ph ph-gear"></i> Configurações</h2>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Gerencie suas categorias, importe dados ou saia da conta.</p>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Gerencie suas categorias, faça backups ou encerre a sessão.</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;">
                 <input type="text" id="catNameInput" placeholder="Nome (ex: React)" style="flex: 2; min-width: 120px;">
@@ -231,13 +231,22 @@
 
             <hr style="border-color: var(--border); margin: 32px 0 24px 0;">
             <h2><i class="ph ph-upload-simple"></i> Importar em Massa</h2>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Faça upload de um ficheiro <b>.json</b>.</p>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Faça upload de um ficheiro <b>.json</b> para adicionar vários comandos de uma vez.</p>
             <input type="file" id="importInput" accept=".json" style="display: none;" onchange="processarImportacao(event)">
             <button class="btn btn-primary" onclick="document.getElementById('importInput').click()" style="background-color: #10b981;">
                 <i class="ph ph-file-arrow-up"></i> Selecionar JSON
             </button>
 
-            <!-- NOVO: Botão de Logout -->
+            <!-- NOVO: Exportar Backup -->
+            <hr style="border-color: var(--border); margin: 32px 0 24px 0;">
+            <h2><i class="ph ph-download-simple"></i> Exportar Backup</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                Transfira um ficheiro <b>.json</b> com todos os comandos atualmente salvos no banco de dados.
+            </p>
+            <button class="btn btn-primary" onclick="exportarBackup()">
+                <i class="ph ph-file-arrow-down"></i> Descarregar Backup JSON
+            </button>
+
             <hr style="border-color: var(--border); margin: 32px 0 24px 0;">
             <h2><i class="ph ph-sign-out"></i> Sessão</h2>
             <button class="btn" onclick="fazerLogout()" style="background-color: var(--danger); color: white; width: 100%;">
@@ -257,7 +266,6 @@
         let idCategoriaEditando = null;
         let modoEdicaoCmd = false;
 
-        // VERIFICA SE ESTÁ LOGADO AO ABRIR A PÁGINA
         async function verificarSessao() {
             try {
                 const res = await fetch('/api/verificar');
@@ -300,7 +308,7 @@
         async function fazerLogout() {
             try {
                 await fetch('/api/logout', { method: 'POST' });
-                window.location.reload(); // Recarrega a página e exibe a tela de login
+                window.location.reload();
             } catch (err) {
                 mostrarToast("Erro ao fazer logout.", true);
             }
@@ -623,7 +631,13 @@
                             const res = await fetch('/comandos', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ titulo: cmd.titulo, categoria: cmd.categoria, descricao: cmd.descricao || '', codigo: cmd.codigo })
+                                body: JSON.stringify({ 
+                                    titulo: cmd.titulo, 
+                                    categoria: cmd.categoria, 
+                                    descricao: cmd.descricao || '', 
+                                    codigo: cmd.codigo,
+                                    favorito: cmd.favorito || false 
+                                })
                             });
                             if (res.ok) sucessoCount++; else duplicadosCount++;
                         } catch (err) {}
@@ -633,11 +647,37 @@
                     mostrarToast(msgFinal);
                     document.getElementById('importInput').value = '';
                     await carregarComandos();
-                    voltarParaLogOff = false;
                     voltarParaLista();
                 } catch (error) { mostrarToast("Erro ao ler o JSON.", true); }
             };
             reader.readAsText(file);
+        }
+
+        // ================= EXPORTAR BACKUP JSON =================
+        async function exportarBackup() {
+            try {
+                const response = await fetch('/api/exportar');
+                if (!response.ok) {
+                    mostrarToast("Erro ao gerar backup.", true);
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup-comandos-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                mostrarToast("Backup exportado com sucesso!");
+            } catch (error) {
+                mostrarToast("Erro ao conectar com o servidor.", true);
+            }
         }
 
         function copiarCodigo() {
@@ -660,7 +700,6 @@
             toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000);
         }
 
-        // Inicia checando a sessão ao carregar a página
         verificarSessao();
     </script>
 </body>

@@ -24,14 +24,14 @@ const pool = new Pool({
 });
 
 // Senha de Acesso (Defina no Render ou use '123456' como padrão)
-const SENHA_MESTRE = process.env.SENHA_MESTRE || '19941205';
+const SENHA_MESTRE = process.env.SENHA_MESTRE || '123456';
 
 // ==========================================
 // PORTÃO DE SEGURANÇA (MIDDLEWARE)
 // ==========================================
 function verificarAuth(req, res, next) {
     if (req.session && req.session.logado) {
-        return next(); // Pode passar
+        return next();
     }
     res.status(401).json({ error: 'Não autorizado. Faça login primeiro.' });
 }
@@ -63,6 +63,22 @@ app.post('/api/logout', (req, res) => {
 });
 
 // ==========================================
+// ROTA DE EXPORTAR BACKUP (JSON)
+// ==========================================
+app.get('/api/exportar', verificarAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT titulo, categoria, descricao, codigo, favorito FROM comandos ORDER BY id DESC');
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=backup-comandos.json');
+        
+        res.status(200).send(JSON.stringify(result.rows, null, 2));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
 // ROTAS DE COMANDOS (Protegidas pelo verificarAuth)
 // ==========================================
 app.get('/comandos', verificarAuth, async (req, res) => {
@@ -73,7 +89,7 @@ app.get('/comandos', verificarAuth, async (req, res) => {
 });
 
 app.post('/comandos', verificarAuth, async (req, res) => {
-    const { titulo, categoria, descricao, codigo } = req.body;
+    const { titulo, categoria, descricao, codigo, favorito } = req.body;
     try {
         const checkDuplicata = await pool.query(
             'SELECT id FROM comandos WHERE titulo = $1 OR codigo = $2',
@@ -83,8 +99,8 @@ app.post('/comandos', verificarAuth, async (req, res) => {
             return res.status(400).json({ error: 'Este Título ou Código já está salvo!' });
         }
         const result = await pool.query(
-            'INSERT INTO comandos (titulo, categoria, descricao, codigo) VALUES ($1, $2, $3, $4) RETURNING *',
-            [titulo, categoria, descricao, codigo]
+            'INSERT INTO comandos (titulo, categoria, descricao, codigo, favorito) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [titulo, categoria, descricao, codigo, favorito || false]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
