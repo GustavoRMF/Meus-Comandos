@@ -1,8 +1,11 @@
 let comandosSalvos = [];
 let categoriasSalvas = [];
+let notasSalvas = [];
 let categoriaAtual = 'Todas';
 let comandoSelecionadoId = null;
 let idCategoriaEditando = null;
+let idNotaEditando = null;
+let corNotaSelecionada = 'indigo';
 let modoEdicaoCmd = false;
 
 async function verificarSessao() {
@@ -56,6 +59,7 @@ async function fazerLogout() {
 async function iniciarApp() {
     await carregarCategorias();
     await carregarComandos();
+    await carregarNotas();
 }
 
 function abrirMenu() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
@@ -80,6 +84,16 @@ async function carregarComandos() {
         renderizarSidebar();
         renderizarLista();
     } catch (error) { mostrarToast("Erro ao carregar comandos.", true); }
+}
+
+async function carregarNotas() {
+    try {
+        const res = await fetch('/notas');
+        if(res.status === 401) return;
+        notasSalvas = await res.json();
+        document.getElementById('notes-total-count').innerText = notasSalvas.length;
+        renderizarNotas();
+    } catch (error) { console.error("Erro ao carregar notas:", error); }
 }
 
 function renderizarSidebar() {
@@ -121,6 +135,7 @@ function atualizarDropdownCategorias() {
 
 function mudarCategoria(catNome) {
     categoriaAtual = catNome;
+    document.getElementById('btnNavNotas').classList.remove('active');
     document.getElementById('searchInput').placeholder = `Buscar em ${catNome}...`;
     document.getElementById('searchInput').value = '';
     fecharTelas(true);
@@ -193,11 +208,13 @@ function fecharTelas(mostrarEmpty = false) {
     document.getElementById('viewArea').classList.remove('show');
     document.getElementById('formArea').classList.remove('show');
     document.getElementById('configArea').classList.remove('show');
+    document.getElementById('notesArea').classList.remove('show');
     if(mostrarEmpty) document.getElementById('emptyState').classList.add('show');
 }
 
 function mostrarDetalhes(id) {
     comandoSelecionadoId = id;
+    document.getElementById('btnNavNotas').classList.remove('active');
     fecharTelas();
     document.getElementById('viewArea').classList.add('show');
     document.getElementById('detailColumn').classList.add('active-mobile');
@@ -232,6 +249,7 @@ function mostrarDetalhes(id) {
 }
 
 function mostrarFormulario() {
+    document.getElementById('btnNavNotas').classList.remove('active');
     fecharTelas();
     document.getElementById('formArea').classList.add('show');
     document.getElementById('detailColumn').classList.add('active-mobile');
@@ -256,6 +274,7 @@ function editarComandoSelecionado() {
 }
 
 function abrirConfiguracoes() {
+    document.getElementById('btnNavNotas').classList.remove('active');
     fecharTelas();
     document.getElementById('configArea').classList.add('show');
     document.getElementById('detailColumn').classList.add('active-mobile');
@@ -263,6 +282,135 @@ function abrirConfiguracoes() {
     renderizarListaConfigCategorias();
 }
 
+// ================= FUNÇÕES DO BLOCO DE NOTAS =================
+function abrirBlocoNotas() {
+    fecharTelas();
+    document.getElementById('notesArea').classList.add('show');
+    document.getElementById('detailColumn').classList.add('active-mobile');
+    document.getElementById('btnNavNotas').classList.add('active');
+    
+    // Remove o destaque das categorias
+    document.querySelectorAll('#sidebar-menu .category-btn').forEach(b => b.classList.remove('active'));
+    fecharMenu();
+    renderizarNotas();
+}
+
+function selecionarCorNota(cor, btnElement) {
+    corNotaSelecionada = cor;
+    document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active'));
+    if (btnElement) btnElement.classList.add('active');
+}
+
+function renderizarNotas() {
+    const grid = document.getElementById('notes-grid');
+    grid.innerHTML = '';
+
+    if (notasSalvas.length === 0) {
+        grid.innerHTML = `<p style="color: var(--text-muted); font-size: 14px; grid-column: 1/-1; text-align: center; padding: 40px;">Nenhuma anotação criada ainda. Escreva o seu primeiro lembrete acima!</p>`;
+        return;
+    }
+
+    notasSalvas.forEach((nota, index) => {
+        const dataFormatada = nota.criado_em ? new Date(nota.criado_em).toLocaleDateString('pt-BR') : 'Hoje';
+        const card = document.createElement('div');
+        card.className = 'note-card';
+        card.setAttribute('data-color', nota.cor || 'indigo');
+        card.style.animationDelay = `${index * 0.05}s`; // Efeito cascata animado
+
+        card.innerHTML = `
+            <div>
+                <h3>${nota.titulo}</h3>
+                <p>${nota.conteudo}</p>
+            </div>
+            <div class="note-footer">
+                <span class="note-date"><i class="ph ph-calendar-blank"></i> ${dataFormatada}</span>
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn-icon" style="padding: 6px 8px;" onclick="copiarNota(${nota.id})" title="Copiar texto"><i class="ph ph-copy"></i></button>
+                    <button class="btn-icon" style="padding: 6px 8px;" onclick="editarNota(${nota.id})" title="Editar"><i class="ph ph-pencil-simple"></i></button>
+                    <button class="btn-icon" style="padding: 6px 8px; color: var(--danger);" onclick="deletarNota(${nota.id})" title="Apagar"><i class="ph ph-trash"></i></button>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+async function salvarNota() {
+    const titulo = document.getElementById('noteTitleInput').value.trim();
+    const conteudo = document.getElementById('noteContentInput').value.trim();
+    
+    if (!titulo || !conteudo) {
+        mostrarToast("Preencha o título e o conteúdo da nota!", true);
+        return;
+    }
+
+    try {
+        if (idNotaEditando) {
+            await fetch(`/notas/${idNotaEditando}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, conteudo, cor: corNotaSelecionada })
+            });
+            mostrarToast("Anotação atualizada!");
+        } else {
+            await fetch('/notas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, conteudo, cor: corNotaSelecionada })
+            });
+            mostrarToast("Anotação guardada!");
+        }
+        cancelarEdicaoNota();
+        await carregarNotas();
+    } catch (e) {
+        mostrarToast("Erro ao guardar anotação.", true);
+    }
+}
+
+function editarNota(id) {
+    const nota = notasSalvas.find(n => n.id === id);
+    if (!nota) return;
+
+    idNotaEditando = id;
+    document.getElementById('noteTitleInput').value = nota.titulo;
+    document.getElementById('noteContentInput').value = nota.conteudo;
+    
+    const dot = document.querySelector(`.color-dot[data-color="${nota.cor || 'indigo'}"]`);
+    selecionarCorNota(nota.cor || 'indigo', dot);
+
+    document.getElementById('btnSalvarNota').innerHTML = '<i class="ph ph-floppy-disk"></i> Atualizar Nota';
+    document.getElementById('btnCancelarNota').style.display = 'inline-flex';
+    document.getElementById('noteTitleInput').focus();
+}
+
+function cancelarEdicaoNota() {
+    idNotaEditando = null;
+    document.getElementById('noteTitleInput').value = '';
+    document.getElementById('noteContentInput').value = '';
+    const dot = document.querySelector('.color-dot[data-color="indigo"]');
+    selecionarCorNota('indigo', dot);
+    document.getElementById('btnSalvarNota').innerHTML = '<i class="ph-bold ph-plus"></i> Guardar Nota';
+    document.getElementById('btnCancelarNota').style.display = 'none';
+}
+
+async function deletarNota(id) {
+    if (confirm("Deseja apagar esta anotação?")) {
+        await fetch(`/notas/${id}`, { method: 'DELETE' });
+        mostrarToast("Anotação apagada!");
+        if (idNotaEditando === id) cancelarEdicaoNota();
+        await carregarNotas();
+    }
+}
+
+function copiarNota(id) {
+    const nota = notasSalvas.find(n => n.id === id);
+    if (!nota) return;
+    navigator.clipboard.writeText(`${nota.titulo}\n\n${nota.conteudo}`).then(() => {
+        mostrarToast("Nota copiada para a área de transferência!");
+    });
+}
+
+// ================= CRUD CATEGORIAS & COMANDOS =================
 function renderizarListaConfigCategorias() {
     const container = document.getElementById('config-cat-list');
     container.innerHTML = '';

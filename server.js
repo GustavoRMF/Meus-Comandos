@@ -8,12 +8,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configuração da Sessão do Navegador
 app.use(session({
     secret: process.env.SESSION_SECRET || 'segredo_super_secreto_comandos',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // Dura 30 dias logado
+    cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }
 }));
 
 app.use(express.static(__dirname)); 
@@ -23,12 +22,8 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Senha de Acesso (Defina no Render ou use '123456' como padrão)
 const SENHA_MESTRE = process.env.SENHA_MESTRE || '123456';
 
-// ==========================================
-// PORTÃO DE SEGURANÇA (MIDDLEWARE)
-// ==========================================
 function verificarAuth(req, res, next) {
     if (req.session && req.session.logado) {
         return next();
@@ -37,7 +32,7 @@ function verificarAuth(req, res, next) {
 }
 
 // ==========================================
-// ROTAS DE AUTENTICAÇÃO
+// AUTENTICAÇÃO & BACKUP
 // ==========================================
 app.post('/api/login', (req, res) => {
     const { senha } = req.body;
@@ -50,11 +45,7 @@ app.post('/api/login', (req, res) => {
 });
 
 app.get('/api/verificar', (req, res) => {
-    if (req.session && req.session.logado) {
-        res.json({ logado: true });
-    } else {
-        res.json({ logado: false });
-    }
+    res.json({ logado: !!(req.session && req.session.logado) });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -62,16 +53,11 @@ app.post('/api/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// ==========================================
-// ROTA DE EXPORTAR BACKUP (JSON)
-// ==========================================
 app.get('/api/exportar', verificarAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT titulo, categoria, descricao, codigo, favorito FROM comandos ORDER BY id DESC');
-        
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', 'attachment; filename=backup-comandos.json');
-        
         res.status(200).send(JSON.stringify(result.rows, null, 2));
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -79,7 +65,7 @@ app.get('/api/exportar', verificarAuth, async (req, res) => {
 });
 
 // ==========================================
-// ROTAS DE COMANDOS (Protegidas pelo verificarAuth)
+// ROTAS DE COMANDOS
 // ==========================================
 app.get('/comandos', verificarAuth, async (req, res) => {
     try {
@@ -138,7 +124,7 @@ app.delete('/comandos/:id', verificarAuth, async (req, res) => {
 });
 
 // ==========================================
-// ROTAS DE CATEGORIAS (Protegidas pelo verificarAuth)
+// ROTAS DE CATEGORIAS
 // ==========================================
 app.get('/categorias', verificarAuth, async (req, res) => {
     try {
@@ -174,6 +160,46 @@ app.delete('/categorias/:id', verificarAuth, async (req, res) => {
     try {
         await pool.query('DELETE FROM categorias WHERE id = $1', [req.params.id]);
         res.json({ message: 'Categoria deletada' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==========================================
+// NOVO: ROTAS DO BLOCO DE NOTAS / LEMBRETES
+// ==========================================
+app.get('/notas', verificarAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM notas ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/notas', verificarAuth, async (req, res) => {
+    const { titulo, conteudo, cor } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO notas (titulo, conteudo, cor) VALUES ($1, $2, $3) RETURNING *',
+            [titulo, conteudo, cor || 'indigo']
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/notas/:id', verificarAuth, async (req, res) => {
+    const { id } = req.params;
+    const { titulo, conteudo, cor } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE notas SET titulo = $1, conteudo = $2, cor = $3 WHERE id = $4 RETURNING *',
+            [titulo, conteudo, cor || 'indigo', id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/notas/:id', verificarAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM notas WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Nota deletada' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

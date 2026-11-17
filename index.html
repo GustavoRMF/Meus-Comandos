@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Meus Comandos</title>
+    <title>Meus Comandos & Notas</title>
     
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    
-    <!-- Ligação com o seu ficheiro CSS separado -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -33,6 +31,12 @@
 
     <!-- 1. Sidebar 3D -->
     <aside class="sidebar" id="sidebar">
+        <!-- NOVO: Acesso rápido ao Bloco de Notas -->
+        <button class="category-btn notes-nav-btn" id="btnNavNotas" onclick="abrirBlocoNotas()" style="margin-bottom: 16px;">
+            <div class="cat-btn-left"><i class="ph-fill ph-note-pencil" style="color: #facc15;"></i> <span>Bloco de Notas</span></div>
+            <span class="cat-count" id="notes-total-count">0</span>
+        </button>
+
         <h2><i class="ph ph-books"></i> Categorias</h2>
         <div class="sidebar-menu" id="sidebar-menu"></div>
         <div class="config-btn-area">
@@ -43,7 +47,7 @@
     </aside>
 
     <!-- 2. Coluna da Lista -->
-    <section class="list-column">
+    <section class="list-column" id="listColumn">
         <div class="list-header">
             <div style="display: flex; gap: 10px; margin-bottom: 16px;">
                 <button class="btn-icon mobile-only" onclick="abrirMenu()" style="padding: 12px;"><i class="ph ph-list" style="font-size: 20px;"></i></button>
@@ -63,9 +67,10 @@
         <div class="empty-state show" id="emptyState">
             <i class="ph ph-hand-pointing"></i>
             <h2>Selecione um comando</h2>
-            <p>Escolha um item na lista ao lado ou crie um novo comando.</p>
+            <p>Escolha um item na lista ao lado ou abra o seu Bloco de Notas no menu.</p>
         </div>
 
+        <!-- Visualizar Comando -->
         <div class="view-section" id="viewArea">
             <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar à Lista</button>
             
@@ -88,6 +93,7 @@
             </div>
         </div>
 
+        <!-- Formulário de Comando -->
         <div class="form-section" id="formArea">
             <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar</button>
             <h2 id="form-titulo"><i class="ph ph-plus-circle"></i> Adicionar Comando</h2>
@@ -101,6 +107,50 @@
             </div>
         </div>
 
+        <!-- NOVO: ÁREA DO BLOCO DE NOTAS ANIMADO -->
+        <div class="notes-section" id="notesArea">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="btn-icon mobile-only" onclick="voltarParaLista()"><i class="ph ph-arrow-left"></i></button>
+                    <div>
+                        <h1 style="font-size: 24px; display: flex; align-items: center; gap: 10px;">
+                            <i class="ph-fill ph-note-pencil" style="color: #facc15;"></i> Bloco de Notas & Lembretes
+                        </h1>
+                        <p style="color: var(--text-muted); font-size: 13px;">Anotações rápidas, ideias de projetos e lembretes do dia a dia.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Caixa de Criação / Edição Rápida -->
+            <div class="note-composer">
+                <input type="text" id="noteTitleInput" placeholder="Título da anotação ou lembrete..." style="font-weight: 600; margin-bottom: 10px;">
+                <textarea id="noteContentInput" placeholder="Escreva sua anotação aqui..." style="font-family: 'Inter', sans-serif; min-height: 80px; margin-bottom: 12px;"></textarea>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <!-- Seletor de Cores 3D -->
+                    <div class="color-picker" id="noteColorPicker">
+                        <span style="font-size: 12px; color: var(--text-muted); margin-right: 6px;">Cor:</span>
+                        <button type="button" class="color-dot active" data-color="indigo" style="background: #6366f1;" onclick="selecionarCorNota('indigo', this)"></button>
+                        <button type="button" class="color-dot" data-color="amber" style="background: #f59e0b;" onclick="selecionarCorNota('amber', this)"></button>
+                        <button type="button" class="color-dot" data-color="emerald" style="background: #10b981;" onclick="selecionarCorNota('emerald', this)"></button>
+                        <button type="button" class="color-dot" data-color="rose" style="background: #f43f5e;" onclick="selecionarCorNota('rose', this)"></button>
+                        <button type="button" class="color-dot" data-color="cyan" style="background: #06b6d4;" onclick="selecionarCorNota('cyan', this)"></button>
+                    </div>
+
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn" id="btnCancelarNota" onclick="cancelarEdicaoNota()" style="display: none; background: transparent; border: 1px solid var(--border); color: white; padding: 8px 16px;">Cancelar</button>
+                        <button class="btn btn-primary" id="btnSalvarNota" onclick="salvarNota()" style="padding: 10px 20px;">
+                            <i class="ph-bold ph-plus"></i> Guardar Nota
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grelha de Cartões Animados -->
+            <div class="notes-grid" id="notes-grid"></div>
+        </div>
+
+        <!-- Configurações -->
         <div class="form-section" id="configArea">
             <button class="btn-icon mobile-only" onclick="voltarParaLista()" style="margin-bottom: 20px; border:none; background:transparent;"><i class="ph ph-arrow-left"></i> Voltar</button>
             <h2><i class="ph ph-gear"></i> Configurações</h2>
@@ -143,7 +193,6 @@
 
     <div id="toast"><i class="ph-fill ph-check-circle"></i> Notificação</div>
 
-    <!-- Ligação com o seu ficheiro JavaScript separado -->
     <script src="app.js"></script>
 </body>
 </html>

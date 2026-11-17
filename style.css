@@ -179,6 +179,80 @@ textarea { resize: vertical; min-height: 100px; font-family: 'Courier New', mono
 #toast { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background-color: var(--success); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 600; transition: var(--transition); opacity: 0; z-index: 1000; display: flex; align-items: center; gap: 8px; }
 #toast.show { bottom: 30px; opacity: 1; }
 
+/* ================= BLOCO DE NOTAS 3D & ANIMADO ================= */
+.notes-section { display: none; max-width: 1100px; }
+
+.notes-nav-btn.active {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    border-bottom-color: #92400e !important;
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35) !important;
+}
+
+.note-composer {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-bottom: 4px solid #0b0d12;
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.color-picker { display: flex; align-items: center; gap: 8px; }
+.color-dot {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent;
+    cursor: pointer; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.color-dot:hover { transform: scale(1.25); }
+.color-dot.active { border-color: white; transform: scale(1.2); box-shadow: 0 0 10px rgba(255,255,255,0.4); }
+
+.notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+    perspective: 1000px;
+}
+
+@keyframes notePopIn {
+    0% { opacity: 0; transform: translateY(20px) scale(0.92) rotateX(-10deg); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotateX(0); }
+}
+
+.note-card {
+    background: linear-gradient(145deg, #1e222d, #161922);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top-width: 4px;
+    border-bottom: 4px solid #090b10;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 180px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: notePopIn 0.35s ease backwards;
+    position: relative;
+}
+
+/* Efeito 3D ao passar o rato no cartão */
+.note-card:hover {
+    transform: translateY(-6px) rotate(-1deg) scale(1.02);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.45);
+}
+
+/* Paleta de cores dos cartões */
+.note-card[data-color="indigo"] { border-top-color: #6366f1; }
+.note-card[data-color="amber"]  { border-top-color: #f59e0b; }
+.note-card[data-color="emerald"]{ border-top-color: #10b981; }
+.note-card[data-color="rose"]   { border-top-color: #f43f5e; }
+.note-card[data-color="cyan"]   { border-top-color: #06b6d4; }
+
+.note-card h3 { font-size: 16px; margin-bottom: 10px; color: var(--text-main); line-height: 1.3; }
+.note-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; white-space: pre-wrap; flex: 1; margin-bottom: 16px; }
+.note-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; }
+.note-date { font-size: 11px; color: #64748b; }
+
 .mobile-only { display: none; }
 @media (max-width: 768px) {
     .mobile-only { display: flex; }
